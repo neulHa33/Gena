@@ -70,6 +70,7 @@ npm run dev
 
 # 3. Open in browser
 http://localhost:3000
+```
 
 ---
 

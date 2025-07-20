@@ -1,0 +1,63 @@
+{
+  "dashboards": [
+    {
+      "id": "907a1fc4-ec7d-47cf-a145-6057df71b899",
+      "name": "hi",
+      "charts": []
+    },
+    {
+      "id": "9ddf41c4-694a-4023-9a5e-56a5716ca464",
+      "name": "hihi",
+      "charts": []
+    },
+    {
+      "id": "a752fd2e-1b42-4333-aea7-72a71a29d593",
+      "name": "hihihi",
+      "charts": []
+    }
+  ],
+  "charts": [
+    {
+      "id": "c760e8ed-af1a-4c22-9ec0-4ceb66b97db6",
+      "dashboardId": "907a1fc4-ec7d-47cf-a145-6057df71b899",
+      "type": "bar",
+      "title": "Sample Chart",
+      "dataEndpoint": "/api/data/total_revenue"
+    },
+    {
+      "id": "7b9441e0-1f99-4a25-8bf0-2f8db337aae3",
+      "dashboardId": "907a1fc4-ec7d-47cf-a145-6057df71b899",
+      "type": "bar",
+      "title": "Sample Chart",
+      "dataEndpoint": "/api/data/total_revenue"
+    },
+    {
+      "id": "0ec1fe1c-271a-49a7-a4ac-a61a65a91324",
+      "dashboardId": "a752fd2e-1b42-4333-aea7-72a71a29d593",
+      "type": "bar",
+      "title": "Sample Chart",
+      "dataEndpoint": "/api/data/total_revenue"
+    },
+    {
+      "id": "681d170f-4b1a-496f-ae1f-dc22b612675d",
+      "dashboardId": "9ddf41c4-694a-4023-9a5e-56a5716ca464",
+      "type": "bar",
+      "title": "Sample Chart",
+      "dataEndpoint": "/api/data/total_revenue"
+    },
+    {
+      "id": "0969d796-41f2-4622-9ef0-4824d1eb24a3",
+      "dashboardId": "9ddf41c4-694a-4023-9a5e-56a5716ca464",
+      "type": "bar",
+      "title": "Sample Chart",
+      "dataEndpoint": "/api/data/total_revenue"
+    },
+    {
+      "id": "3ef56732-3383-4b08-b065-4b4a328c9a07",
+      "dashboardId": "9ddf41c4-694a-4023-9a5e-56a5716ca464",
+      "type": "bar",
+      "title": "Sample Chart",
+      "dataEndpoint": "/api/data/total_revenue"
+    }
+  ]
+}

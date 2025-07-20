@@ -1,40 +1,92 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/pages/api-reference/create-next-app).
+# 📊 Gena Dashboard App
 
-## Getting Started
+This is a mock dashboard application built with **Next.js**, **TypeScript**, and **Tailwind CSS** as a take-home assignment for **Gena**.
 
-First, run the development server:
+It allows users to create dashboards and add various types of charts with customizable titles and data sources. All data is persisted locally using **LowDB**.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+---
+
+## 🔧 Tech Stack
+
+- **Next.js (Pages Router)**
+- **React**
+- **TypeScript**
+- **Tailwind CSS**
+- **Chart.js**
+- **LowDB** (for local JSON-based persistence)
+
+---
+
+## ✨ Features
+
+### 📁 Dashboard Management
+- View all dashboards on the home page
+- Create a new dashboard with a custom name (via prompt)
+- Navigate to the dashboard detail page upon creation
+- Dashboards are saved in `db.json` and persist between server restarts
+
+### 📈 Chart Management
+- Add charts to each dashboard
+- Supported chart types: `number`, `bar`, and `line`
+- Charts include a title and a data endpoint
+- Chart state is stored per dashboard and saved to disk
+
+### 🧠 UX Enhancements
+- Loading state during dashboard creation (e.g., "Creating...")
+- Friendly message when no dashboards exist
+- Prompt input for dashboard name
+
+---
+
+## 🗂 Folder Structure
+```
+gena-dashboard/
+├── components/
+│ └── Chart.tsx
+├── lib/
+│ └── db.ts
+├── pages/
+│ ├── index.tsx // Home page: dashboard list & creation
+│ ├── dashboard/[id].tsx // Dashboard detail with chart management
+│ └── api/
+│ ├── dashboards/
+│ │ ├── index.ts // GET & POST dashboards
+│ │ └── [id].ts // GET dashboard by ID
+│ └── charts.ts // POST new chart
+├── db.json // LowDB local database
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `pages/index.tsx`. The page auto-updates as you edit the file.
+---
 
-[API routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.ts`.
+## 🚀 Getting Started
 
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) instead of React pages.
+```bash
+# 1. Install dependencies
+npm install
 
-This project uses [`next/font`](https://nextjs.org/docs/pages/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+# 2. Start development server
+npm run dev
 
-## Learn More
+# 3. Open in browser
+http://localhost:3000
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn-pages-router) - an interactive Next.js tutorial.
+## 📌 How It Works
+- All data (dashboards and charts) is stored in db.json using lowdb
+- On each API call, lib/db.ts reads and writes to the file
+- This simulates a simple backend storage without a real database
+- Charts are rendered dynamically using Chart.js
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
+## 🔮 Future Improvements
+- Chart editing and deletion
+- Drag-and-drop chart reordering
+- Responsive layout for mobile
+- Authentication with Firebase or Auth.js
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/pages/building-your-application/deploying) for more details.
+---
+## 🧑‍💻 Author
+Created by Haneul Mun for the Gena Frontend Engineer take-home assignment.
+Feel free to explore and run the project locally!

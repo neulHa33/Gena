@@ -1,30 +1,47 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { Responsive, WidthProvider } from 'react-grid-layout';
+import 'react-grid-layout/css/styles.css';
+import 'react-resizable/css/styles.css';
 import ChartRenderer from "../../../components/ChartRenderer";
-import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import Link from "next/link";
+import DarkModeToggle from "../../../components/DarkModeToggle";
+
+const ResponsiveGridLayout = WidthProvider(Responsive);
 
 interface Chart {
   id: string;
   dashboardId: string;
-  type: "number" | "bar" | "line";
+  type: "number" | "bar" | "line" | "pie" | "doughnut" | "scatter" | "radar" | "polarArea";
   title: string;
   dataEndpoint: string;
   color?: string;
+  x?: number;
+  y?: number;
+  w?: number;
+  h?: number;
 }
 
 interface Dashboard {
   id: string;
   name: string;
-  chartIds: string[];
+  charts: Chart[];
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 const chartOptions = [
-  { value: "number", label: "Number (e.g. total revenue)" },
-  { value: "bar", label: "Bar Chart (e.g. users by region)" },
-  { value: "line", label: "Line Chart (e.g. orders over time)" },
+  { value: "number", label: "Number Display" },
+  { value: "bar", label: "Bar Chart" },
+  { value: "line", label: "Line Chart" },
+  { value: "pie", label: "Pie Chart" },
+  { value: "doughnut", label: "Doughnut Chart" },
+  { value: "scatter", label: "Scatter Plot" },
+  { value: "radar", label: "Radar Chart" },
+  { value: "polarArea", label: "Polar Area" },
 ];
 
 const dataEndpoints = [
@@ -61,47 +78,66 @@ export default function DashboardPage() {
   const [addLoading, setAddLoading] = useState(false);
   const [previewData, setPreviewData] = useState<any>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
-  const [typeOptions, setTypeOptions] = useState(["number", "bar", "line"]);
+  const [typeOptions, setTypeOptions] = useState(["number", "bar", "line", "pie", "doughnut", "scatter", "radar", "polarArea"]);
   const [reordering, setReordering] = useState(false);
   const [editChart, setEditChart] = useState<Chart | null>(null);
   const [editForm, setEditForm] = useState({ type: "number", title: "", dataEndpoint: dataEndpoints[0].value, color: chartColors[0].value });
   const [editLoading, setEditLoading] = useState(false);
   const [editPreviewData, setEditPreviewData] = useState<any>(null);
   const [editPreviewLoading, setEditPreviewLoading] = useState(false);
-  const [editTypeOptions, setEditTypeOptions] = useState(["number", "bar", "line"]);
+  const [editTypeOptions, setEditTypeOptions] = useState(["number", "bar", "line", "pie", "doughnut", "scatter", "radar", "polarArea"]);
   const [deleteChartId, setDeleteChartId] = useState<string | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [fullscreenChart, setFullscreenChart] = useState<Chart | null>(null);
   const dashboardRef = React.useRef<HTMLDivElement>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [dashboards, setDashboards] = useState<any[]>([]);
 
   useEffect(() => {
     async function fetchData() {
       setLoading(true);
-      const dashRes = await fetch(`/api/dashboards/${dashboardId}`);
-      if (!dashRes.ok) {
+      try {
+        // Fetch dashboard from API
+        const dashRes = await fetch(`/api/dashboards/${dashboardId}`);
+        if (!dashRes.ok) {
+          router.push("/");
+          return;
+        }
+        const dash = await dashRes.json();
+        setDashboard(dash);
+        
+        // Fetch charts for this dashboard
+        const chartsRes = await fetch(`/api/charts?dashboardId=${dashboardId}`);
+        if (chartsRes.ok) {
+          const chartsData = await chartsRes.json();
+          setCharts(chartsData);
+        }
+        
+        // Fetch all dashboards for sidebar
+        const allDashboardsRes = await fetch('/api/dashboards');
+        if (allDashboardsRes.ok) {
+          const allDashboards = await allDashboardsRes.json();
+          setDashboards(allDashboards);
+        }
+      } catch (error) {
+        console.error('Failed to load dashboard:', error);
         router.push("/");
         return;
+      } finally {
+        setLoading(false);
       }
-      const dash = await dashRes.json();
-      setDashboard(dash);
-      const chartsRes = await fetch(`/api/charts`);
-      const allCharts = await chartsRes.json();
-      setCharts(allCharts.filter((c: Chart) => c.dashboardId === dashboardId));
-      setLoading(false);
     }
     fetchData();
   }, [dashboardId, router]);
 
   // Helper to get charts in dashboard order
-  const orderedCharts = dashboard && dashboard.chartIds.length > 0
-    ? dashboard.chartIds.map((id) => charts.find((c) => c.id === id)).filter(Boolean) as Chart[]
-    : charts;
+  const orderedCharts = charts;
 
   // --- Add Chart Modal Logic ---
   useEffect(() => {
     // Reset preview and type options when endpoint changes
     setPreviewData(null);
-    setTypeOptions(["number", "bar", "line"]);
+    setTypeOptions(["number", "bar", "line", "pie", "doughnut", "scatter", "radar", "polarArea"]);
     if (!addForm.dataEndpoint) return;
     setPreviewLoading(true);
     fetch(addForm.dataEndpoint)
@@ -113,15 +149,15 @@ export default function DashboardPage() {
           setTypeOptions(["number"]);
           setAddForm(f => ({ ...f, type: "number" }));
         } else if (Array.isArray(data.labels) && Array.isArray(data.values)) {
-          setTypeOptions(["bar", "line"]);
+          setTypeOptions(["bar", "line", "pie", "doughnut", "scatter", "radar", "polarArea"]);
           setAddForm(f => ({ ...f, type: "bar" }));
         } else {
-          setTypeOptions(["number", "bar", "line"]);
+          setTypeOptions(["number", "bar", "line", "pie", "doughnut", "scatter", "radar", "polarArea"]);
         }
       })
       .catch(() => {
         setPreviewData(null);
-        setTypeOptions(["number", "bar", "line"]);
+        setTypeOptions(["number", "bar", "line", "pie", "doughnut", "scatter", "radar", "polarArea"]);
       })
       .finally(() => setPreviewLoading(false));
     // eslint-disable-next-line
@@ -141,7 +177,7 @@ export default function DashboardPage() {
     
     // Reset preview and type options
     setEditPreviewData(null);
-    setEditTypeOptions(["number", "bar", "line"]);
+    setEditTypeOptions(["number", "bar", "line", "pie", "doughnut", "scatter", "radar", "polarArea"]);
     
     // Load preview data for the current endpoint
     setEditPreviewLoading(true);
@@ -154,155 +190,157 @@ export default function DashboardPage() {
           setEditTypeOptions(["number"]);
           setEditForm(f => ({ ...f, type: "number" }));
         } else if (Array.isArray(data.labels) && Array.isArray(data.values)) {
-          setEditTypeOptions(["bar", "line"]);
+          setEditTypeOptions(["bar", "line", "pie", "doughnut", "scatter", "radar", "polarArea"]);
           setEditForm(f => ({ ...f, type: "bar" }));
         } else {
-          setEditTypeOptions(["number", "bar", "line"]);
+          setEditTypeOptions(["number", "bar", "line", "pie", "doughnut", "scatter", "radar", "polarArea"]);
         }
       })
       .catch(() => {
         setEditPreviewData(null);
-        setEditTypeOptions(["number", "bar", "line"]);
+        setEditTypeOptions(["number", "bar", "line", "pie", "doughnut", "scatter", "radar", "polarArea"]);
       })
       .finally(() => setEditPreviewLoading(false));
+    // eslint-disable-next-line
   }, [editChart]);
-
-  // Update edit preview when endpoint changes
-  useEffect(() => {
-    if (!editForm.dataEndpoint) return;
-    setEditPreviewData(null);
-    setEditTypeOptions(["number", "bar", "line"]);
-    setEditPreviewLoading(true);
-    fetch(editForm.dataEndpoint)
-      .then(res => res.json())
-      .then(data => {
-        setEditPreviewData(data);
-        // Chart type filtering logic
-        if (typeof data.value === "number") {
-          setEditTypeOptions(["number"]);
-          setEditForm(f => ({ ...f, type: "number" }));
-        } else if (Array.isArray(data.labels) && Array.isArray(data.values)) {
-          setEditTypeOptions(["bar", "line"]);
-          setEditForm(f => ({ ...f, type: "bar" }));
-        } else {
-          setEditTypeOptions(["number", "bar", "line"]);
-        }
-      })
-      .catch(() => {
-        setEditPreviewData(null);
-        setEditTypeOptions(["number", "bar", "line"]);
-      })
-      .finally(() => setEditPreviewLoading(false));
-  }, [editForm.dataEndpoint]);
 
   const handleAddChart = async (e: React.FormEvent) => {
     e.preventDefault();
     setAddLoading(true);
-    const res = await fetch("/api/charts", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        dashboardId,
-        ...addForm,
-      }),
-    });
-    const newChart = await res.json();
-    setCharts((prev) => [...prev, newChart]);
-    // Update dashboard chartIds order
-    if (dashboard) {
-      const updatedChartIds = [...dashboard.chartIds, newChart.id];
-      setDashboard({ ...dashboard, chartIds: updatedChartIds });
-      await fetch(`/api/dashboards/${dashboardId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chartIds: updatedChartIds }),
+    try {
+      const response = await fetch('/api/charts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          dashboardId,
+          type: addForm.type,
+          title: addForm.title,
+          dataEndpoint: addForm.dataEndpoint,
+          color: addForm.color,
+        }),
       });
+      if (response.ok) {
+        const newChart = await response.json();
+        setCharts(prev => [...prev, newChart]);
+        setAddModalOpen(false);
+        setAddForm({ type: "number", title: "", dataEndpoint: dataEndpoints[0].value, color: chartColors[0].value });
+        setPreviewData(null);
+      }
+    } catch (error) {
+      console.error('Failed to add chart:', error);
+    } finally {
+      setAddLoading(false);
     }
-    setAddForm({ type: "number", title: "", dataEndpoint: dataEndpoints[0].value, color: chartColors[0].value });
-    setAddModalOpen(false);
-    setAddLoading(false);
-    setPreviewData(null);
   };
 
   const handlePreview = async (e: React.FormEvent) => {
     e.preventDefault();
     setPreviewLoading(true);
-    setPreviewData(null);
     try {
-      const res = await fetch(addForm.dataEndpoint);
-      const data = await res.json();
+      const response = await fetch(addForm.dataEndpoint);
+      const data = await response.json();
       setPreviewData(data);
-    } catch {
-      setPreviewData(null);
+    } catch (error) {
+      console.error('Failed to preview chart:', error);
+    } finally {
+      setPreviewLoading(false);
     }
-    setPreviewLoading(false);
   };
 
   const handleEditPreview = async (e: React.FormEvent) => {
     e.preventDefault();
     setEditPreviewLoading(true);
-    setEditPreviewData(null);
     try {
-      const res = await fetch(editForm.dataEndpoint);
-      const data = await res.json();
+      const response = await fetch(editForm.dataEndpoint);
+      const data = await response.json();
       setEditPreviewData(data);
-    } catch {
-      setEditPreviewData(null);
+    } catch (error) {
+      console.error('Failed to preview chart:', error);
+    } finally {
+      setEditPreviewLoading(false);
     }
-    setEditPreviewLoading(false);
   };
 
-  const onDragEnd = async (result: DropResult) => {
-    if (!result.destination || !dashboard) return;
-    if (result.source.index === result.destination.index) return;
+  const onLayoutChange = async (layout: any) => {
+    if (reordering) return;
     setReordering(true);
-    const newChartIds = Array.from(dashboard.chartIds);
-    const [removed] = newChartIds.splice(result.source.index, 1);
-    newChartIds.splice(result.destination.index, 0, removed);
-    setDashboard({ ...dashboard, chartIds: newChartIds });
-    await fetch(`/api/dashboards/${dashboardId}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ chartIds: newChartIds }),
-    });
-    setReordering(false);
+    try {
+      // Update chart positions in the database
+      const updatedCharts = charts.map((chart, index) => {
+        const layoutItem = layout.find((item: any) => item.i === chart.id);
+        if (layoutItem) {
+          return {
+            ...chart,
+            x: layoutItem.x,
+            y: layoutItem.y,
+            w: layoutItem.w,
+            h: layoutItem.h,
+          };
+        }
+        return chart;
+      });
+
+      // Update each chart via API
+      for (const chart of updatedCharts) {
+        await fetch(`/api/charts/${chart.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(chart),
+        });
+      }
+
+      setCharts(updatedCharts);
+    } catch (error) {
+      console.error('Failed to update layout:', error);
+    } finally {
+      setReordering(false);
+    }
   };
 
-  // --- Edit Chart Logic ---
   const handleEditChart = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editChart) return;
     setEditLoading(true);
-    await fetch(`/api/charts/${editChart.id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(editForm),
-    });
-    setCharts((prev) => prev.map((c) =>
-      c.id === editChart.id
-        ? { ...c, ...editForm, type: editForm.type as "number" | "bar" | "line" }
-        : c
-    ));
-    setEditChart(null);
-    setEditLoading(false);
-    setEditPreviewData(null);
+    try {
+      const response = await fetch(`/api/charts/${editChart.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: editForm.type,
+          title: editForm.title,
+          dataEndpoint: editForm.dataEndpoint,
+          color: editForm.color,
+        }),
+      });
+      if (response.ok) {
+        const updatedChart = await response.json();
+        setCharts(prev => prev.map(chart => chart.id === editChart.id ? updatedChart : chart));
+        setEditChart(null);
+        setEditForm({ type: "number", title: "", dataEndpoint: dataEndpoints[0].value, color: chartColors[0].value });
+        setEditPreviewData(null);
+      }
+    } catch (error) {
+      console.error('Failed to update chart:', error);
+    } finally {
+      setEditLoading(false);
+    }
   };
 
   const handleDeleteChart = async (id: string) => {
     setDeleteLoading(true);
-    await fetch(`/api/charts/${id}`, { method: "DELETE" });
-    setCharts((prev) => prev.filter((c) => c.id !== id));
-    if (dashboard) {
-      const updatedChartIds = dashboard.chartIds.filter((cid) => cid !== id);
-      setDashboard({ ...dashboard, chartIds: updatedChartIds });
-      await fetch(`/api/dashboards/${dashboardId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chartIds: updatedChartIds }),
+    try {
+      const response = await fetch(`/api/charts/${id}`, {
+        method: 'DELETE',
       });
+      if (response.ok) {
+        setCharts(prev => prev.filter(chart => chart.id !== id));
+        setDeleteChartId(null);
+      }
+    } catch (error) {
+      console.error('Failed to delete chart:', error);
+    } finally {
+      setDeleteLoading(false);
     }
-    setDeleteChartId(null);
-    setDeleteLoading(false);
   };
 
   const handleExportPDF = async () => {
@@ -310,25 +348,22 @@ export default function DashboardPage() {
     
     console.log('Starting PDF export...');
     
-    // Add export class to body to hide floating elements
+    // Add export class to body
     document.body.classList.add('exporting-pdf');
     console.log('Added exporting-pdf class to body');
     
-    // Manually hide specific elements that might still be visible
-    const elementsToHide = document.querySelectorAll('.fixed, .absolute, nav, button[onclick*="setAddModalOpen"], .btn-outline');
+    // Hide elements that shouldn't be in the export
+    const elementsToHide = document.querySelectorAll('.no-export');
     const originalDisplays: string[] = [];
-    
-    elementsToHide.forEach((el) => {
-      originalDisplays.push((el as HTMLElement).style.display);
+    elementsToHide.forEach((el, index) => {
+      originalDisplays[index] = (el as HTMLElement).style.display;
       (el as HTMLElement).style.display = 'none';
       console.log('Hidden element:', el);
     });
     
     try {
-      console.log('Starting html2canvas capture...');
-      const canvas = await html2canvas(dashboardRef.current, { 
-        backgroundColor: '#ffffff', 
-        scale: 2,
+      console.log('Capturing canvas...');
+      const canvas = await html2canvas(dashboardRef.current, {
         useCORS: true,
         allowTaint: true,
         logging: false,
@@ -354,335 +389,445 @@ export default function DashboardPage() {
     }
   };
 
-  return (
-    <main className="w-full">
-      <div className="mb-6 flex items-center gap-2 justify-between flex-wrap">
-        <div className="flex items-center gap-2 min-w-0">
-          <button
-            className="text-blue-500 hover:underline text-sm"
-            onClick={() => router.push("/")}
-          >
-            ← Dashboards
-          </button>
-          <span className="text-gray-300">/</span>
-          <span className="font-semibold text-gray-700 text-sm truncate">{dashboard?.name}</span>
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-black flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-mint dark:border-pink mx-auto"></div>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading dashboard...</p>
         </div>
-        <button
-          className="btn btn-outline px-4 py-2 rounded-lg flex items-center gap-2"
-          onClick={handleExportPDF}
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-          Export to PDF
-        </button>
       </div>
-      <div ref={dashboardRef} id="dashboard-export" className="pb-8">
-        {loading ? (
-          <div>Loading...</div>
-        ) : dashboard ? (
-          <>
-            <h1 className="text-2xl font-bold mb-4 tracking-tight">{dashboard.name}</h1>
-            {/* Add Chart Button */}
-            <div className="mb-8 flex justify-end">
+    );
+  }
+
+  if (!dashboard) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-black flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Dashboard not found</h1>
+          <button
+            onClick={() => router.push('/')}
+            className="bg-mint dark:bg-pink text-white px-6 py-2 rounded-lg hover:opacity-90 transition-opacity"
+          >
+            Back to Home
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-white dark:bg-black">
+      {/* Navigation Bar */}
+      <nav className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center">
               <button
-                className="btn btn-primary px-6 py-2 rounded-xl shadow hover:shadow-lg flex items-center gap-2"
-                onClick={() => setAddModalOpen(true)}
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                className="p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-mint dark:focus:ring-pink"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
+              <div className="ml-4">
+                <h1 className="text-xl font-semibold text-gray-900 dark:text-white">{dashboard.name}</h1>
+              </div>
+            </div>
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={() => setAddModalOpen(true)}
+                className="bg-mint dark:bg-pink text-white px-4 py-2 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
+              >
                 Add Chart
               </button>
+              <button
+                onClick={handleExportPDF}
+                className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white px-3 py-2 rounded-md text-sm font-medium"
+              >
+                Export PDF
+              </button>
+              <button
+                onClick={() => router.push('/')}
+                className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white px-3 py-2 rounded-md text-sm font-medium"
+              >
+                Back to Home
+              </button>
+              <div className="ml-4">
+                <DarkModeToggle />
+              </div>
             </div>
+          </div>
+        </div>
+      </nav>
 
-            {/* Add Chart Modal */}
-            {addModalOpen && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-                <form
-                  onSubmit={handleAddChart}
-                  className="bg-white rounded-2xl shadow-2xl p-8 max-w-lg w-full mx-4"
-                >
-                  <div className="mb-6">
-                    <h2 className="text-2xl font-bold text-gray-900 mb-2">Add Chart</h2>
-                    <p className="text-gray-600">Configure your chart below. Chart type options will update based on the endpoint shape.</p>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-                    <div>
-                      <label className="block text-xs mb-1">Title</label>
-                      <input
-                        className="border border-gray-200 rounded-lg px-3 py-2 w-full bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-300"
-                        value={addForm.title}
-                        onChange={e => setAddForm(f => ({ ...f, title: e.target.value }))}
-                        required
-                      />
+      <div className="flex">
+        {/* Sidebar */}
+        <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 transform transition-transform duration-300 ease-in-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 lg:static lg:inset-0`}>
+          <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200 dark:border-gray-700">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Dashboards</h2>
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="lg:hidden p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
+            >
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          <div className="p-4">
+            {dashboards.length === 0 ? (
+              <div className="text-center py-8">
+                <div className="text-gray-400 dark:text-gray-500 mb-4">
+                  <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                </div>
+                <p className="text-sm text-gray-500 dark:text-gray-400">No dashboards yet</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {dashboards.map((dash) => (
+                  <Link
+                    key={dash.id}
+                    href={`/dashboard/${dash.id}`}
+                    className={`block px-3 py-2 rounded-lg text-sm transition-colors ${
+                      dash.id === dashboardId 
+                        ? 'bg-mint dark:bg-pink text-white' 
+                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
+                    }`}
+                  >
+                    <div className="flex items-center">
+                      <div className={`w-2 h-2 rounded-full mr-3 ${
+                        dash.id === dashboardId 
+                          ? 'bg-white' 
+                          : 'bg-mint dark:bg-pink'
+                      }`}></div>
+                      <span className="truncate">{dash.name}</span>
                     </div>
-                    <div>
-                      <label className="block text-xs mb-1">Endpoint</label>
-                      <select
-                        className="border border-gray-200 rounded-lg px-3 py-2 w-full bg-white"
-                        value={addForm.dataEndpoint}
-                        onChange={e => setAddForm(f => ({ ...f, dataEndpoint: e.target.value }))}
-                      >
-                        {dataEndpoints.map(opt => (
-                          <option key={opt.value} value={opt.value}>{opt.label}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-xs mb-1">Color Palette</label>
-                      <select
-                        className="border border-gray-200 rounded-lg px-3 py-2 w-full bg-white"
-                        value={addForm.color}
-                        onChange={e => setAddForm(f => ({ ...f, color: e.target.value }))}
-                      >
-                        {chartColors.map(opt => (
-                          <option key={opt.value} value={opt.value}>{opt.label}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-xs mb-1">Chart Type</label>
-                      <select
-                        className="border border-gray-200 rounded-lg px-3 py-2 w-full bg-white"
-                        value={addForm.type}
-                        onChange={e => setAddForm(f => ({ ...f, type: e.target.value }))}
-                      >
-                        {chartOptions.filter(opt => typeOptions.includes(opt.value)).map(opt => (
-                          <option key={opt.value} value={opt.value}>{opt.label}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                  <div className="flex gap-3 mb-6">
-                    <button
-                      type="button"
-                      onClick={handlePreview}
-                      className="btn btn-outline"
-                      disabled={previewLoading}
-                    >
-                      {previewLoading ? "Loading..." : "Preview Chart"}
-                    </button>
-                    <button
-                      type="submit"
-                      className="btn btn-primary"
-                      disabled={addLoading || !addForm.title.trim()}
-                    >
-                      {addLoading ? "Adding..." : "Add Chart"}
-                    </button>
-                    <button
-                      type="button"
-                      className="btn btn-outline ml-auto"
-                      onClick={() => {
-                        setAddModalOpen(false);
-                        setAddForm({ type: "number", title: "", dataEndpoint: dataEndpoints[0].value, color: chartColors[0].value });
-                        setPreviewData(null);
-                      }}
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                  {/* Chart Preview */}
-                  {previewData && (
-                    <div className="mt-4 bg-gray-50 rounded-xl p-4 border border-gray-100">
-                      <div className="mb-2 text-sm text-gray-500 font-medium">Chart Preview</div>
-                      <ChartRenderer
-                        type={addForm.type as "number" | "bar" | "line"}
-                        title={addForm.title || "Preview"}
-                        data={previewData}
-                        color={addForm.color}
-                      />
-                    </div>
-                  )}
-                </form>
+                  </Link>
+                ))}
               </div>
             )}
+          </div>
+        </div>
 
-            {/* Chart List (Draggable) */}
-            <DragDropContext onDragEnd={onDragEnd}>
-              <Droppable droppableId="charts-droppable">
-                {(provided) => (
-                  <div
-                    className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6"
-                    ref={provided.innerRef}
-                    {...provided.droppableProps}
-                  >
-                    {orderedCharts.length === 0 && (
-                      <div className="text-gray-400">No charts yet. Add one above!</div>
-                    )}
-                    {orderedCharts.map((chart, idx) => (
-                      <Draggable key={chart.id} draggableId={chart.id} index={idx}>
-                        {(provided, snapshot) => (
-                          <div
-                            ref={provided.innerRef}
-                            {...provided.draggableProps}
-                            {...provided.dragHandleProps}
-                            className={`card transition-shadow ${snapshot.isDragging ? "shadow-2xl" : ""}`}
+        {/* Main Content */}
+        <div className="flex-1">
+          <div className="max-w-7xl mx-auto px-6 py-8">
+            <div ref={dashboardRef} id="dashboard-export" className="pb-8">
+              {loading ? (
+                <div>Loading...</div>
+              ) : dashboard ? (
+                <>
+                  <h1 className="text-2xl font-bold mb-4 tracking-tight">{dashboard.name}</h1>
+                  {/* Add Chart Button */}
+                  <div className="mb-8 flex justify-end">
+                    <button
+                      className="btn btn-primary px-6 py-2 rounded-xl shadow hover:shadow-lg flex items-center gap-2"
+                      onClick={() => setAddModalOpen(true)}
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                      Add Chart
+                    </button>
+                  </div>
+
+                  {/* Add Chart Modal */}
+                  {addModalOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+                      <form
+                        onSubmit={handleAddChart}
+                        className="bg-white rounded-2xl shadow-2xl p-8 max-w-lg w-full mx-4"
+                      >
+                        <div className="mb-6">
+                          <h2 className="text-2xl font-bold text-gray-900 mb-2">Add Chart</h2>
+                          <p className="text-gray-600">Configure your chart below. Chart type options will update based on the endpoint shape.</p>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                          <div>
+                            <label className="block text-xs mb-1">Title</label>
+                            <input
+                              className="border border-gray-200 rounded-lg px-3 py-2 w-full bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-300"
+                              value={addForm.title}
+                              onChange={e => setAddForm(f => ({ ...f, title: e.target.value }))}
+                              required
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs mb-1">Endpoint</label>
+                            <select
+                              className="border border-gray-200 rounded-lg px-3 py-2 w-full bg-white"
+                              value={addForm.dataEndpoint}
+                              onChange={e => setAddForm(f => ({ ...f, dataEndpoint: e.target.value }))}
+                            >
+                              {dataEndpoints.map(opt => (
+                                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-xs mb-1">Color Palette</label>
+                            <select
+                              className="border border-gray-200 rounded-lg px-3 py-2 w-full bg-white"
+                              value={addForm.color}
+                              onChange={e => setAddForm(f => ({ ...f, color: e.target.value }))}
+                            >
+                              {chartColors.map(opt => (
+                                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-xs mb-1">Chart Type</label>
+                            <select
+                              className="border border-gray-200 rounded-lg px-3 py-2 w-full bg-white"
+                              value={addForm.type}
+                              onChange={e => setAddForm(f => ({ ...f, type: e.target.value }))}
+                            >
+                              {chartOptions.filter(opt => typeOptions.includes(opt.value)).map(opt => (
+                                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                        <div className="flex gap-3">
+                          <button
+                            type="button"
+                            onClick={handlePreview}
+                            className="btn btn-outline"
+                            disabled={previewLoading}
                           >
-                            <div className="relative group">
-                              <ChartContainer chart={chart} setFullscreenChart={setFullscreenChart} />
-                              <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition">
-                                <button
-                                  className="bg-white border border-gray-200 rounded p-1 shadow hover:bg-blue-50"
-                                  title="Edit"
-                                  onClick={() => setEditChart(chart)}
-                                >
-                                  <span className="sr-only">Edit</span>
-                                  <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M15.232 5.232l3.536 3.536M9 13l6.586-6.586a2 2 0 112.828 2.828L11.828 15.828a4 4 0 01-1.414.828l-4 1a1 1 0 01-1.263-1.263l1-4a4 4 0 01.828-1.414z"/></svg>
-                                </button>
-                                <button
-                                  className="bg-white border border-gray-200 rounded p-1 shadow hover:bg-red-50"
-                                  title="Delete"
-                                  onClick={() => setDeleteChartId(chart.id)}
-                                >
-                                  <span className="sr-only">Delete</span>
-                                  <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
-                                </button>
-                              </div>
-                            </div>
-                            {deleteChartId === chart.id && (
-                              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
-                                <div className="bg-white rounded-xl shadow-lg p-6 max-w-xs w-full">
-                                  <div className="mb-4 text-center">
-                                    <div className="font-semibold mb-2">Delete chart?</div>
-                                    <div className="text-gray-500 text-sm">This action cannot be undone.</div>
-                                  </div>
-                                  <div className="flex gap-2 justify-center">
-                                    <button
-                                      className="bg-red-500 text-white px-4 py-2 rounded shadow hover:bg-red-600"
-                                      onClick={() => handleDeleteChart(chart.id)}
-                                      disabled={deleteLoading}
-                                    >
-                                      {deleteLoading ? "Deleting..." : "Delete"}
-                                    </button>
-                                    <button
-                                      className="bg-gray-100 px-4 py-2 rounded shadow hover:bg-gray-200"
-                                      onClick={() => setDeleteChartId(null)}
-                                      disabled={deleteLoading}
-                                    >
-                                      Cancel
-                                    </button>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
+                            {previewLoading ? "Loading..." : "Preview Chart"}
+                          </button>
+                          <button
+                            type="submit"
+                            className="btn btn-primary"
+                            disabled={addLoading || !addForm.title.trim()}
+                          >
+                            {addLoading ? "Saving..." : "Add Chart"}
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-outline ml-auto"
+                            onClick={() => {
+                              setAddModalOpen(false);
+                              setAddForm({ type: "number", title: "", dataEndpoint: dataEndpoints[0].value, color: chartColors[0].value });
+                              setPreviewData(null);
+                            }}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                        {/* Chart Preview */}
+                        {previewData && (
+                          <div className="mt-4 bg-gray-50 rounded-xl p-4 border border-gray-100">
+                            <div className="mb-2 text-sm text-gray-500 font-medium">Chart Preview</div>
+                            <ChartRenderer
+                              type={addForm.type as "number" | "bar" | "line" | "pie" | "doughnut" | "scatter" | "radar" | "polarArea"}
+                              title={addForm.title || "Preview"}
+                              data={previewData}
+                              color={addForm.color}
+                            />
                           </div>
                         )}
-                      </Draggable>
-                    ))}
-                    {provided.placeholder}
-                  </div>
-                )}
-              </Droppable>
-            </DragDropContext>
-            {reordering && <div className="text-xs text-gray-400 mt-2">Saving order...</div>}
-            {/* Chart Edit Modal */}
-            {editChart && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-                <form
-                  onSubmit={handleEditChart}
-                  className="bg-white rounded-2xl shadow-2xl p-8 max-w-lg w-full mx-4"
-                >
-                  <div className="mb-6">
-                    <h2 className="text-2xl font-bold text-gray-900 mb-2">Edit Chart</h2>
-                    <p className="text-gray-600">Update your chart configuration below. Chart type options will update based on the endpoint shape.</p>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-                    <div>
-                      <label className="block text-xs mb-1">Title</label>
-                      <input
-                        className="border border-gray-200 rounded-lg px-3 py-2 w-full bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-300"
-                        value={editForm.title}
-                        onChange={e => setEditForm(f => ({ ...f, title: e.target.value }))}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs mb-1">Endpoint</label>
-                      <select
-                        className="border border-gray-200 rounded-lg px-3 py-2 w-full bg-white"
-                        value={editForm.dataEndpoint}
-                        onChange={e => setEditForm(f => ({ ...f, dataEndpoint: e.target.value }))}
-                      >
-                        {dataEndpoints.map(opt => (
-                          <option key={opt.value} value={opt.value}>{opt.label}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-xs mb-1">Color Palette</label>
-                      <select
-                        className="border border-gray-200 rounded-lg px-3 py-2 w-full bg-white"
-                        value={editForm.color}
-                        onChange={e => setEditForm(f => ({ ...f, color: e.target.value }))}
-                      >
-                        {chartColors.map(opt => (
-                          <option key={opt.value} value={opt.value}>{opt.label}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-xs mb-1">Chart Type</label>
-                      <select
-                        className="border border-gray-200 rounded-lg px-3 py-2 w-full bg-white"
-                        value={editForm.type}
-                        onChange={e => setEditForm(f => ({ ...f, type: e.target.value }))}
-                      >
-                        {chartOptions.filter(opt => editTypeOptions.includes(opt.value)).map(opt => (
-                          <option key={opt.value} value={opt.value}>{opt.label}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                  <div className="flex gap-3 mb-6">
-                    <button
-                      type="button"
-                      onClick={handleEditPreview}
-                      className="btn btn-outline"
-                      disabled={editPreviewLoading}
-                    >
-                      {editPreviewLoading ? "Loading..." : "Preview Chart"}
-                    </button>
-                    <button
-                      type="submit"
-                      className="btn btn-primary"
-                      disabled={editLoading || !editForm.title.trim()}
-                    >
-                      {editLoading ? "Saving..." : "Save Changes"}
-                    </button>
-                    <button
-                      type="button"
-                      className="btn btn-outline ml-auto"
-                      onClick={() => {
-                        setEditChart(null);
-                        setEditForm({ type: "number", title: "", dataEndpoint: dataEndpoints[0].value, color: chartColors[0].value });
-                        setEditPreviewData(null);
-                      }}
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                  {/* Chart Preview */}
-                  {editPreviewData && (
-                    <div className="mt-4 bg-gray-50 rounded-xl p-4 border border-gray-100">
-                      <div className="mb-2 text-sm text-gray-500 font-medium">Chart Preview</div>
-                      <ChartRenderer
-                        type={editForm.type as "number" | "bar" | "line"}
-                        title={editForm.title || "Preview"}
-                        data={editPreviewData}
-                        color={editForm.color}
-                      />
+                      </form>
                     </div>
                   )}
-                </form>
-              </div>
-            )}
-          </>
-        ) : (
-          <div>Dashboard not found.</div>
-        )}
-        {/* Fullscreen Chart Modal */}
-        {fullscreenChart && (
-          <FullscreenChartModal chart={fullscreenChart} onClose={() => setFullscreenChart(null)} />
-        )}
+
+                  {/* Dashboard Grid */}
+                  <ResponsiveGridLayout
+                    className="layout"
+                    layouts={{ lg: orderedCharts.map(chart => ({
+                      i: chart.id,
+                      x: chart.x || 0,
+                      y: chart.y || 0,
+                      w: chart.w || 6,
+                      h: chart.h || 4,
+                    })) }}
+                    breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
+                    cols={{ lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 }}
+                    onLayoutChange={onLayoutChange}
+                    isDraggable={true}
+                    isResizable={true}
+                    margin={[16, 16]}
+                    containerPadding={[16, 16]}
+                  >
+                    {orderedCharts.map(chart => (
+                      <div key={chart.id} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+                        <div className="flex items-center justify-between mb-4">
+                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{chart.title}</h3>
+                          <div className="flex items-center space-x-2">
+                            <button
+                              onClick={() => setEditChart(chart)}
+                              className="text-gray-400 hover:text-mint dark:hover:text-pink p-1"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                              </svg>
+                            </button>
+                            <button
+                              onClick={() => setDeleteChartId(chart.id)}
+                              className="text-gray-400 hover:text-red-500 p-1"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
+                        <ChartContainer chart={chart} setFullscreenChart={setFullscreenChart} />
+                      </div>
+                    ))}
+                  </ResponsiveGridLayout>
+
+                  {/* Edit Chart Modal */}
+                  {editChart && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+                      <form
+                        onSubmit={handleEditChart}
+                        className="bg-white rounded-2xl shadow-2xl p-8 max-w-lg w-full mx-4"
+                      >
+                        <div className="mb-6">
+                          <h2 className="text-2xl font-bold text-gray-900 mb-2">Edit Chart</h2>
+                          <p className="text-gray-600">Update your chart configuration below.</p>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                          <div>
+                            <label className="block text-xs mb-1">Title</label>
+                            <input
+                              className="border border-gray-200 rounded-lg px-3 py-2 w-full bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-300"
+                              value={editForm.title}
+                              onChange={e => setEditForm(f => ({ ...f, title: e.target.value }))}
+                              required
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs mb-1">Endpoint</label>
+                            <select
+                              className="border border-gray-200 rounded-lg px-3 py-2 w-full bg-white"
+                              value={editForm.dataEndpoint}
+                              onChange={e => setEditForm(f => ({ ...f, dataEndpoint: e.target.value }))}
+                            >
+                              {dataEndpoints.map(opt => (
+                                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-xs mb-1">Color Palette</label>
+                            <select
+                              className="border border-gray-200 rounded-lg px-3 py-2 w-full bg-white"
+                              value={editForm.color}
+                              onChange={e => setEditForm(f => ({ ...f, color: e.target.value }))}
+                            >
+                              {chartColors.map(opt => (
+                                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-xs mb-1">Chart Type</label>
+                            <select
+                              className="border border-gray-200 rounded-lg px-3 py-2 w-full bg-white"
+                              value={editForm.type}
+                              onChange={e => setEditForm(f => ({ ...f, type: e.target.value }))}
+                            >
+                              {chartOptions.filter(opt => editTypeOptions.includes(opt.value)).map(opt => (
+                                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                        <div className="flex gap-3">
+                          <button
+                            type="button"
+                            onClick={handleEditPreview}
+                            className="btn btn-outline"
+                            disabled={editPreviewLoading}
+                          >
+                            {editPreviewLoading ? "Loading..." : "Preview Chart"}
+                          </button>
+                          <button
+                            type="submit"
+                            className="btn btn-primary"
+                            disabled={editLoading || !editForm.title.trim()}
+                          >
+                            {editLoading ? "Saving..." : "Save Changes"}
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-outline ml-auto"
+                            onClick={() => {
+                              setEditChart(null);
+                              setEditForm({ type: "number", title: "", dataEndpoint: dataEndpoints[0].value, color: chartColors[0].value });
+                              setEditPreviewData(null);
+                            }}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                        {/* Chart Preview */}
+                        {editPreviewData && (
+                          <div className="mt-4 bg-gray-50 rounded-xl p-4 border border-gray-100">
+                            <div className="mb-2 text-sm text-gray-500 font-medium">Chart Preview</div>
+                            <ChartRenderer
+                              type={editForm.type as "number" | "bar" | "line" | "pie" | "doughnut" | "scatter" | "radar" | "polarArea"}
+                              title={editForm.title || "Preview"}
+                              data={editPreviewData}
+                              color={editForm.color}
+                            />
+                          </div>
+                        )}
+                      </form>
+                    </div>
+                  )}
+
+                  {/* Delete Confirmation Modal */}
+                  {deleteChartId && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+                      <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4">
+                        <h2 className="text-2xl font-bold text-gray-900 mb-4">Delete Chart</h2>
+                        <p className="text-gray-600 mb-6">Are you sure you want to delete this chart? This action cannot be undone.</p>
+                        <div className="flex gap-3">
+                          <button
+                            onClick={() => handleDeleteChart(deleteChartId)}
+                            className="btn btn-danger"
+                            disabled={deleteLoading}
+                          >
+                            {deleteLoading ? "Deleting..." : "Delete"}
+                          </button>
+                          <button
+                            onClick={() => setDeleteChartId(null)}
+                            className="btn btn-outline ml-auto"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div>Dashboard not found.</div>
+              )}
+              {/* Fullscreen Chart Modal */}
+              {fullscreenChart && (
+                <FullscreenChartModal chart={fullscreenChart} onClose={() => setFullscreenChart(null)} />
+              )}
+            </div>
+          </div>
+        </div>
       </div>
-    </main>
+
+      {/* Overlay for mobile sidebar */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 z-40 bg-black bg-opacity-50 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+    </div>
   );
 }
 

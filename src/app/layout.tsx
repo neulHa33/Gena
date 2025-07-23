@@ -1,25 +1,26 @@
-import type { Metadata } from "next";
-import "./globals.css";
-import NavigationBar from "../components/NavigationBar";
+import type { Metadata } from 'next'
+import { Inter } from 'next/font/google'
+import './globals.css'
+import DarkModeToggle from '../components/DarkModeToggle'
+
+const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: "Dashboard App",
-  description: "A modern dashboard application",
-};
+  title: 'Dashboard Analytics',
+  description: 'Interactive dashboard with real-time analytics',
+}
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: {
+  children: React.ReactNode
+}) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen transition-colors">
-        <NavigationBar />
-        <div className="pt-10 pb-12 px-2 sm:px-6 min-h-screen max-w-6xl mx-auto w-full flex flex-col">
-          {children}
-        </div>
+    <html lang="en">
+      <body className={`${inter.className} bg-white dark:bg-black text-gray-900 dark:text-white transition-colors`}>
+        <DarkModeToggle />
+        {children}
       </body>
     </html>
-  );
+  )
 }

@@ -3,8 +3,16 @@ import { readDb, writeDb } from '../../../lib/db';
 import { Chart } from '../../../types/dashboard';
 import { v4 as uuidv4 } from 'uuid';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const db = await readDb();
+  const { searchParams } = new URL(req.url);
+  const dashboardId = searchParams.get('dashboardId');
+  
+  if (dashboardId) {
+    const filteredCharts = db.data.charts.filter((chart) => chart.dashboardId === dashboardId);
+    return NextResponse.json(filteredCharts);
+  }
+  
   return NextResponse.json(db.data.charts);
 }
 

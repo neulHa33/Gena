@@ -10,11 +10,13 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const db = await readDb();
-  const { name } = await req.json();
+  const { name, layout, charts } = await req.json();
   const newDashboard: Dashboard = {
     id: uuidv4(),
     name,
-    chartIds: [],
+    charts: charts || [],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
   };
   db.data.dashboards.push(newDashboard);
   await writeDb();

@@ -1,38 +1,35 @@
-"use client";
-import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import DarkModeToggle from '../components/DarkModeToggle';
 
 interface Dashboard {
   id: string;
   name: string;
-  chartIds: string[];
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export default function HomePage() {
   const router = useRouter();
   const [dashboards, setDashboards] = useState<Dashboard[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [createModalOpen, setCreateModalOpen] = useState(false);
-  const [createForm, setCreateForm] = useState({ name: "" });
-  const [createLoading, setCreateLoading] = useState(false);
-  const [editDashboard, setEditDashboard] = useState<Dashboard | null>(null);
-  const [editForm, setEditForm] = useState({ name: "" });
-  const [editLoading, setEditLoading] = useState(false);
-  const [deleteDashboard, setDeleteDashboard] = useState<Dashboard | null>(null);
-  const [deleteLoading, setDeleteLoading] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
+    // Load dashboards from API
     async function fetchDashboards() {
       setLoading(true);
       try {
-        const res = await fetch("/api/dashboards");
-        const data = await res.json();
-        setDashboards(data);
+        const response = await fetch('/api/dashboards');
+        if (response.ok) {
+          const data = await response.json();
+          setDashboards(data);
+        }
       } catch (error) {
-        console.error("Failed to fetch dashboards:", error);
+        console.error('Failed to load dashboards:', error);
       } finally {
         setLoading(false);
       }
@@ -40,314 +37,226 @@ export default function HomePage() {
     fetchDashboards();
   }, []);
 
-  const filteredDashboards = dashboards.filter((dashboard) =>
-    dashboard.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const totalPages = Math.ceil(filteredDashboards.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedDashboards = filteredDashboards.slice(startIndex, startIndex + itemsPerPage);
-
-  const handleCreateDashboard = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setCreateLoading(true);
-    try {
-      const res = await fetch("/api/dashboards", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(createForm),
-      });
-      const newDashboard = await res.json();
-      setDashboards((prev) => [...prev, newDashboard]);
-      setCreateForm({ name: "" });
-      setCreateModalOpen(false);
-      router.push(`/dashboard/${newDashboard.id}`);
-    } catch (error) {
-      console.error("Failed to create dashboard:", error);
-    } finally {
-      setCreateLoading(false);
-    }
+  const handleCreateDashboard = () => {
+    router.push('/dashboard/create');
   };
 
-  const handleEditDashboard = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editDashboard) return;
-    setEditLoading(true);
-    try {
-      await fetch(`/api/dashboards/${editDashboard.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(editForm),
-      });
-      setDashboards((prev) =>
-        prev.map((d) =>
-          d.id === editDashboard.id ? { ...d, name: editForm.name } : d
-        )
-      );
-      setEditDashboard(null);
-      setEditForm({ name: "" });
-    } catch (error) {
-      console.error("Failed to edit dashboard:", error);
-    } finally {
-      setEditLoading(false);
-    }
-  };
-
-  const handleDeleteDashboard = async () => {
-    if (!deleteDashboard) return;
-    setDeleteLoading(true);
-    try {
-      await fetch(`/api/dashboards/${deleteDashboard.id}`, {
-        method: "DELETE",
-      });
-      setDashboards((prev) => prev.filter((d) => d.id !== deleteDashboard.id));
-      setDeleteDashboard(null);
-    } catch (error) {
-      console.error("Failed to delete dashboard:", error);
-    } finally {
-      setDeleteLoading(false);
-    }
-  };
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-black flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-mint dark:border-pink mx-auto"></div>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <main className="w-full">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2 tracking-tight">Your Dashboards</h1>
-        <p className="text-gray-600 dark:text-gray-400">Create and manage your data dashboards</p>
-      </div>
-
-      {/* Search and Create */}
-      <div className="mb-6 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-        <div className="relative flex-1 max-w-md">
-          <input
-            type="text"
-            placeholder="Search dashboards..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-mint dark:focus:ring-pink focus:border-transparent"
-          />
-          <svg className="absolute left-3 top-2.5 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-        </div>
-        <button
-          onClick={() => setCreateModalOpen(true)}
-          className="btn btn-primary px-6 py-2 rounded-xl shadow hover:shadow-lg flex items-center gap-2"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          Create Dashboard
-        </button>
-      </div>
-
-      {/* Dashboard List */}
-      {loading ? (
-        <div className="text-center py-12">
-          <div className="text-gray-400">Loading dashboards...</div>
-        </div>
-      ) : filteredDashboards.length === 0 ? (
-        <div className="text-center py-12">
-          <div className="text-gray-400 mb-4">
-            {searchTerm ? "No dashboards found matching your search." : "No dashboards yet."}
-          </div>
-          {!searchTerm && (
-            <button
-              onClick={() => setCreateModalOpen(true)}
-              className="btn btn-primary"
-            >
-              Create your first dashboard
-            </button>
-          )}
-        </div>
-      ) : (
-        <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            {paginatedDashboards.map((dashboard) => (
-              <div key={dashboard.id} className="card group">
-                <div className="flex items-start justify-between mb-4">
-                  <h3 className="font-semibold text-lg text-gray-900 dark:text-gray-100 truncate">
-                    {dashboard.name}
-                  </h3>
-                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition">
-                    <button
-                      onClick={() => {
-                        setEditDashboard(dashboard);
-                        setEditForm({ name: dashboard.name });
-                      }}
-                      className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                      title="Edit"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536M9 13l6.586-6.586a2 2 0 112.828 2.828L11.828 15.828a4 4 0 01-1.414.828l-4 1a1 1 0 01-1.263-1.263l1-4a4 4 0 01.828-1.414z" />
-                      </svg>
-                    </button>
-                    <button
-                      onClick={() => setDeleteDashboard(dashboard)}
-                      className="p-1 text-gray-400 hover:text-red-500"
-                      title="Delete"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-                <div className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                  {dashboard.chartIds.length} chart{dashboard.chartIds.length !== 1 ? "s" : ""}
-                </div>
-                <button
-                  onClick={() => router.push(`/dashboard/${dashboard.id}`)}
-                  className="btn btn-outline w-full"
-                >
-                  Open Dashboard
-                </button>
+    <div className="min-h-screen bg-white dark:bg-black">
+      {/* Navigation Bar */}
+      <nav className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center">
+              <button
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                className="p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-mint dark:focus:ring-pink"
+              >
+                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
+              <div className="ml-4">
+                <h1 className="text-xl font-semibold text-gray-900 dark:text-white">Dashboard Analytics</h1>
               </div>
-            ))}
+            </div>
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={handleCreateDashboard}
+                className="bg-mint dark:bg-pink text-white px-4 py-2 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
+              >
+                Create Dashboard
+              </button>
+              <div className="ml-4">
+                <DarkModeToggle />
+              </div>
+            </div>
           </div>
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-2 mt-8">
-              <button
-                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                disabled={currentPage === 1}
-                className="btn btn-outline px-3 py-1 disabled:opacity-50"
-              >
-                Previous
-              </button>
-              <span className="text-sm text-gray-600 dark:text-gray-400">
-                Page {currentPage} of {totalPages}
-              </span>
-              <button
-                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                disabled={currentPage === totalPages}
-                className="btn btn-outline px-3 py-1 disabled:opacity-50"
-              >
-                Next
-              </button>
-            </div>
-          )}
-        </>
-      )}
-
-      {/* Create Dashboard Modal */}
-      {createModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <form onSubmit={handleCreateDashboard} className="modal">
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">Create Dashboard</h2>
-              <p className="text-gray-600 dark:text-gray-400">Give your dashboard a name to get started.</p>
-            </div>
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Dashboard Name
-              </label>
-              <input
-                type="text"
-                value={createForm.name}
-                onChange={(e) => setCreateForm({ name: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-mint dark:focus:ring-pink focus:border-transparent"
-                placeholder="Enter dashboard name..."
-                required
-              />
-            </div>
-            <div className="flex gap-3">
-              <button
-                type="submit"
-                className="btn btn-primary"
-                disabled={createLoading || !createForm.name.trim()}
-              >
-                {createLoading ? "Creating..." : "Create Dashboard"}
-              </button>
-              <button
-                type="button"
-                className="btn btn-outline"
-                onClick={() => {
-                  setCreateModalOpen(false);
-                  setCreateForm({ name: "" });
-                }}
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
         </div>
-      )}
+      </nav>
 
-      {/* Edit Dashboard Modal */}
-      {editDashboard && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <form onSubmit={handleEditDashboard} className="modal">
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">Edit Dashboard</h2>
-              <p className="text-gray-600 dark:text-gray-400">Update your dashboard name.</p>
-            </div>
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Dashboard Name
-              </label>
-              <input
-                type="text"
-                value={editForm.name}
-                onChange={(e) => setEditForm({ name: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-ring-mint dark:focus:ring-pink focus:border-transparent"
-                placeholder="Enter dashboard name..."
-                required
-              />
-            </div>
-            <div className="flex gap-3">
-              <button
-                type="submit"
-                className="btn btn-primary"
-                disabled={editLoading || !editForm.name.trim()}
-              >
-                {editLoading ? "Saving..." : "Save Changes"}
-              </button>
-              <button
-                type="button"
-                className="btn btn-outline"
-                onClick={() => {
-                  setEditDashboard(null);
-                  setEditForm({ name: "" });
-                }}
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
+      <div className="flex">
+        {/* Sidebar */}
+        <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 transform transition-transform duration-300 ease-in-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 lg:static lg:inset-0`}>
+          <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200 dark:border-gray-700">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Dashboards</h2>
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="lg:hidden p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
+            >
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          <div className="p-4">
+            {dashboards.length === 0 ? (
+              <div className="text-center py-8">
+                <div className="text-gray-400 dark:text-gray-500 mb-4">
+                  <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                </div>
+                <p className="text-sm text-gray-500 dark:text-gray-400">No dashboards yet</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {dashboards.map((dashboard) => (
+                  <Link
+                    key={dashboard.id}
+                    href={`/dashboard/${dashboard.id}`}
+                    className="block px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white transition-colors"
+                  >
+                    <div className="flex items-center">
+                      <div className="w-2 h-2 bg-mint dark:bg-pink rounded-full mr-3"></div>
+                      <span className="truncate">{dashboard.name}</span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
-      )}
 
-      {/* Delete Dashboard Modal */}
-      {deleteDashboard && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="modal">
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">Delete Dashboard</h2>
-              <p className="text-gray-600 dark:text-gray-400">
-                Are you sure you want to delete "{deleteDashboard.name}"? This action cannot be undone.
+        {/* Main Content */}
+        <div className="flex-1">
+          <div className="max-w-6xl mx-auto px-4 py-8">
+            {/* Header */}
+            <div className="text-center mb-12">
+              <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
+                Dashboard Analytics
+              </h1>
+              <p className="text-xl text-gray-600 dark:text-gray-400 mb-8">
+                Create and manage your interactive dashboards
               </p>
+              <button
+                onClick={handleCreateDashboard}
+                className="bg-mint dark:bg-pink text-white px-8 py-3 rounded-lg text-lg font-semibold hover:opacity-90 transition-opacity"
+              >
+                Create New Dashboard
+              </button>
             </div>
-            <div className="flex gap-3">
-              <button
-                onClick={handleDeleteDashboard}
-                className="btn btn-danger"
-                disabled={deleteLoading}
-              >
-                {deleteLoading ? "Deleting..." : "Delete Dashboard"}
-              </button>
-              <button
-                onClick={() => setDeleteDashboard(null)}
-                className="btn btn-outline"
-                disabled={deleteLoading}
-              >
-                Cancel
-              </button>
+
+            {/* Dashboard List */}
+            <div className="max-w-4xl mx-auto">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">
+                  Your Dashboards
+                </h2>
+                <span className="text-gray-500 dark:text-gray-400">
+                  {dashboards.length} dashboard{dashboards.length !== 1 ? 's' : ''}
+                </span>
+              </div>
+
+              {dashboards.length === 0 ? (
+                <div className="text-center py-12">
+                  <div className="text-gray-400 dark:text-gray-500 mb-4">
+                    <svg className="mx-auto h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No dashboards yet</h3>
+                  <p className="text-gray-500 dark:text-gray-400 mb-6">Create your first dashboard to get started</p>
+                  <button
+                    onClick={handleCreateDashboard}
+                    className="bg-mint dark:bg-pink text-white px-6 py-2 rounded-lg hover:opacity-90 transition-opacity"
+                  >
+                    Create Your First Dashboard
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {dashboards.slice(0, 2).map((dashboard) => (
+                    <Link
+                      key={dashboard.id}
+                      href={`/dashboard/${dashboard.id}`}
+                      className="block group"
+                    >
+                      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-md transition-shadow">
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="w-10 h-10 bg-mint dark:bg-pink rounded-lg flex items-center justify-center">
+                            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                            </svg>
+                          </div>
+                          <div className="text-gray-400 group-hover:text-mint dark:group-hover:text-pink transition-colors">
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </svg>
+                          </div>
+                        </div>
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2 group-hover:text-mint dark:group-hover:text-pink transition-colors">
+                          {dashboard.name}
+                        </h3>
+                        {dashboard.createdAt && (
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            Created {new Date(dashboard.createdAt).toLocaleDateString()}
+                          </p>
+                        )}
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Features Section */}
+            <div className="mt-16 max-w-4xl mx-auto">
+              <h2 className="text-2xl font-semibold text-gray-900 dark:text-white text-center mb-8">
+                Features
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div className="text-center">
+                  <div className="w-12 h-12 bg-mint dark:bg-pink rounded-lg flex items-center justify-center mx-auto mb-4">
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Drag & Drop</h3>
+                  <p className="text-gray-600 dark:text-gray-400">Rearrange and resize charts with ease</p>
+                </div>
+                <div className="text-center">
+                  <div className="w-12 h-12 bg-mint dark:bg-pink rounded-lg flex items-center justify-center mx-auto mb-4">
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Multiple Chart Types</h3>
+                  <p className="text-gray-600 dark:text-gray-400">Bar, line, pie, and more chart types</p>
+                </div>
+                <div className="text-center">
+                  <div className="w-12 h-12 bg-mint dark:bg-pink rounded-lg flex items-center justify-center mx-auto mb-4">
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Light & Dark Mode</h3>
+                  <p className="text-gray-600 dark:text-gray-400">Beautiful themes for any preference</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Overlay for mobile sidebar */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 z-40 bg-black bg-opacity-50 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
       )}
-    </main>
+    </div>
   );
 }

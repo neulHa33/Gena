@@ -1,26 +1,121 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+body {
+  min-height: 100vh;
+  background: #f9fafb;
+  font-family: 'Inter', Arial, Helvetica, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color: #222;
+  font-size: 1.12rem;
+  letter-spacing: -0.01em;
+  line-height: 1.7;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+input, select, button {
+  outline: none;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+::-webkit-scrollbar {
+  width: 8px;
+  background: #f3f4f6;
+}
+::-webkit-scrollbar-thumb {
+  background: #e5e7eb;
+  border-radius: 4px;
+}
+
+.card {
+  @apply bg-white dark:bg-gray-800 rounded-2xl shadow-md border border-gray-100 dark:border-gray-800 px-3 py-2 sm:px-5 sm:py-7 transition-all duration-150;
+}
+
+.btn {
+  @apply rounded-lg px-3 sm:px-4 py-2 sm:py-2 font-semibold shadow-sm transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-mint dark:focus:ring-pink text-base sm:text-lg;
+}
+
+.btn-primary {
+  @apply bg-mint dark:bg-pink text-gray-900 dark:text-gray-900 hover:bg-mint/80 dark:hover:bg-pink/80 disabled:opacity-50;
+}
+
+.btn-danger {
+  @apply bg-pink dark:bg-mint text-white hover:bg-pink/80 dark:hover:bg-mint/80 disabled:opacity-50;
+}
+
+.btn-outline {
+  @apply bg-white dark:bg-gray-900 border border-mint dark:border-pink text-mint dark:text-pink hover:bg-mint/10 dark:hover:bg-pink/10;
+}
+
+.modal {
+  @apply bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-4 sm:p-7 max-w-xs sm:max-w-md w-full mx-2 sm:mx-4;
+}
+
+/* Export-specific styles for PDF generation */
+.exporting-pdf .fixed,
+.exporting-pdf .absolute,
+.exporting-pdf nav,
+.exporting-pdf button[onclick*="setAddModalOpen"],
+.exporting-pdf .btn-outline,
+.exporting-pdf .fixed,
+.exporting-pdf .absolute {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  position: static !important;
+}
+
+.exporting-pdf .card {
+  @apply shadow-none rounded-lg border border-gray-300 bg-white;
+  box-shadow: none !important;
+  border-radius: 8px !important;
+}
+
+.exporting-pdf .btn {
+  @apply shadow-none rounded-lg;
+  box-shadow: none !important;
+  border-radius: 8px !important;
+}
+
+.exporting-pdf nav {
+  display: none !important;
+  visibility: hidden !important;
+}
+
+.exporting-pdf #dashboard-export {
+  padding: 24px !important;
+  margin: 0 !important;
+}
+
+/* Additional specific selectors */
+.exporting-pdf button:not(.card button),
+.exporting-pdf .fixed,
+.exporting-pdf .absolute {
+  display: none !important;
+}
+
+@media print {
+  .fixed, .absolute {
+    display: none !important;
+  }
+  
+  .card {
+    @apply shadow-none rounded-none border border-gray-300;
+  }
+  
+  .btn {
+    @apply shadow-none rounded-none;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@media (max-width: 640px) {
+  .card {
+    @apply px-2 py-2;
+  }
+  .modal {
+    @apply p-3;
+  }
+  .btn {
+    @apply px-2 py-2 text-base;
+  }
 }

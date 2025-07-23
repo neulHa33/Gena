@@ -1,36 +1,83 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Gena Dashboard
 
-## Getting Started
+A modern, full-featured dashboard web app built with Next.js, TypeScript, Tailwind CSS, and Chart.js. This project is a take-home assignment for a Frontend Engineer interview at Gena.
 
-First, run the development server:
+## 🚀 Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- **Multiple Dashboards:** Create, view, and rename multiple dashboards.
+- **Charts:** Add number, bar, and line charts to dashboards. Configure chart type, title, and data source.
+- **Drag-and-Drop:** Reorder charts within a dashboard using drag-and-drop.
+- **Mock API:** All data is served via Next.js API routes with an in-memory mock database.
+- **Modern UI:** Clean, white, and responsive design using Tailwind CSS.
+
+## 🛠️ Tech Stack
+
+- [Next.js (App Router)](https://nextjs.org/)
+- [React](https://react.dev/)
+- [TypeScript](https://www.typescriptlang.org/)
+- [Tailwind CSS](https://tailwindcss.com/)
+- [Chart.js](https://www.chartjs.org/) + [react-chartjs-2](https://react-chartjs-2.js.org/)
+- [@hello-pangea/dnd](https://github.com/hello-pangea/dnd) (drag-and-drop)
+
+## 📁 Project Structure
+
+```
+src/
+  app/
+    api/                # Next.js API routes (mock backend)
+    dashboard/[id]/     # Dashboard page (charts, drag-and-drop)
+    page.tsx            # Homepage (dashboard list, create, rename)
+    layout.tsx          # App layout
+    globals.css         # Global styles
+  components/           # Reusable React components (e.g., ChartRenderer)
+  lib/                  # Mock DB logic
+  types/                # TypeScript types
+  styles/               # (Optional) Custom styles
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🧪 Mock API Endpoints
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- `GET /api/dashboards` — List dashboards
+- `POST /api/dashboards` — Create dashboard
+- `GET /api/dashboards/:id` — Get dashboard
+- `PUT /api/dashboards/:id` — Update dashboard (rename, reorder charts)
+- `DELETE /api/dashboards/:id` — Delete dashboard (not implemented by default)
+- `GET /api/charts` — List charts
+- `POST /api/charts` — Create chart
+- `GET /api/charts/:id` — Get chart
+- `PUT /api/charts/:id` — Update chart
+- `DELETE /api/charts/:id` — Delete chart
+- Chart data endpoints:
+  - `/api/data/total_revenue` — `{ value: 98123 }`
+  - `/api/data/orders_over_time` — `{ labels: [...], values: [...] }`
+  - `/api/data/signups_by_region` — `{ labels: [...], values: [...] }`
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🖥️ Getting Started
 
-## Learn More
+1. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+2. **Run the development server:**
+   ```bash
+   npm run dev
+   ```
+3. **Open [http://localhost:3000](http://localhost:3000) in your browser.**
 
-To learn more about Next.js, take a look at the following resources:
+## ✨ Usage
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **Create a dashboard:** Use the form on the homepage.
+- **Rename a dashboard:** Click the "Rename" button next to a dashboard.
+- **Add charts:** Go to a dashboard, fill out the chart form, and add.
+- **Reorder charts:** Drag and drop charts to reorder them. Order is saved automatically.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 📦 Optional Improvements
 
-## Deploy on Vercel
+- Dashboard deletion
+- Mobile responsiveness
+- Docker support
+- More chart types and data endpoints
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 📄 License
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+MIT — for interview/demo purposes only.

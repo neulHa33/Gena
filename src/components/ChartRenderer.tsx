@@ -238,21 +238,6 @@ const ChartRenderer = React.memo(({ type, title, data, color = '#72E9BF', fullsc
     return baseOptions;
   }, [type, fullscreen, chartData]);
 
-  if (!chartData) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-center">
-          <div className="text-gray-400 dark:text-gray-500 mb-2">
-            <svg className="mx-auto h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-            </svg>
-          </div>
-          <p className="text-sm text-gray-500 dark:text-gray-400">No data available</p>
-        </div>
-      </div>
-    );
-  }
-
   // Modify chart data for specific chart types
   const modifiedChartData = useMemo(() => {
     if (!chartData) return null;
@@ -323,6 +308,21 @@ const ChartRenderer = React.memo(({ type, title, data, color = '#72E9BF', fullsc
 
     return baseData;
   }, [chartData, type]);
+
+  if (!chartData) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center">
+          <div className="text-gray-400 dark:text-gray-500 mb-2">
+            <svg className="mx-auto h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+          </div>
+          <p className="text-sm text-gray-500 dark:text-gray-400">No data available</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div 

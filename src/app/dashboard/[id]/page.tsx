@@ -9,13 +9,14 @@ import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import Link from "next/link";
 import DarkModeToggle from "../../../components/DarkModeToggle";
+import Sidebar from "../../../components/Sidebar";
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
 interface Chart {
   id: string;
   dashboardId: string;
-  type: "number" | "bar" | "line" | "pie" | "doughnut" | "scatter" | "radar" | "polarArea";
+  type: "number" | "bar" | "line" | "pie" | "doughnut" | "radar" | "polarArea" | "area";
   title: string;
   dataEndpoint: string;
   color?: string;
@@ -39,9 +40,9 @@ const chartOptions = [
   { value: "line", label: "Line Chart" },
   { value: "pie", label: "Pie Chart" },
   { value: "doughnut", label: "Doughnut Chart" },
-  { value: "scatter", label: "Scatter Plot" },
   { value: "radar", label: "Radar Chart" },
   { value: "polarArea", label: "Polar Area" },
+  { value: "area", label: "Area Chart" },
 ];
 
 const dataEndpoints = [
@@ -78,14 +79,14 @@ export default function DashboardPage() {
   const [addLoading, setAddLoading] = useState(false);
   const [previewData, setPreviewData] = useState<any>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
-  const [typeOptions, setTypeOptions] = useState(["number", "bar", "line", "pie", "doughnut", "scatter", "radar", "polarArea"]);
+  const [typeOptions, setTypeOptions] = useState(["number", "bar", "line", "pie", "doughnut", "radar", "polarArea", "area"]);
   const [reordering, setReordering] = useState(false);
   const [editChart, setEditChart] = useState<Chart | null>(null);
   const [editForm, setEditForm] = useState({ type: "number", title: "", dataEndpoint: dataEndpoints[0].value, color: chartColors[0].value });
   const [editLoading, setEditLoading] = useState(false);
   const [editPreviewData, setEditPreviewData] = useState<any>(null);
   const [editPreviewLoading, setEditPreviewLoading] = useState(false);
-  const [editTypeOptions, setEditTypeOptions] = useState(["number", "bar", "line", "pie", "doughnut", "scatter", "radar", "polarArea"]);
+  const [editTypeOptions, setEditTypeOptions] = useState(["number", "bar", "line", "pie", "doughnut", "radar", "polarArea", "area"]);
   const [deleteChartId, setDeleteChartId] = useState<string | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [fullscreenChart, setFullscreenChart] = useState<Chart | null>(null);
@@ -149,15 +150,15 @@ export default function DashboardPage() {
           setTypeOptions(["number"]);
           setAddForm(f => ({ ...f, type: "number" }));
         } else if (Array.isArray(data.labels) && Array.isArray(data.values)) {
-          setTypeOptions(["bar", "line", "pie", "doughnut", "scatter", "radar", "polarArea"]);
+          setTypeOptions(["bar", "line", "pie", "doughnut", "radar", "polarArea", "area"]);
           setAddForm(f => ({ ...f, type: "bar" }));
         } else {
-          setTypeOptions(["number", "bar", "line", "pie", "doughnut", "scatter", "radar", "polarArea"]);
+          setTypeOptions(["number", "bar", "line", "pie", "doughnut", "radar", "polarArea", "area"]);
         }
       })
       .catch(() => {
         setPreviewData(null);
-        setTypeOptions(["number", "bar", "line", "pie", "doughnut", "scatter", "radar", "polarArea"]);
+        setTypeOptions(["number", "bar", "line", "pie", "doughnut", "radar", "polarArea", "area"]);
       })
       .finally(() => setPreviewLoading(false));
     // eslint-disable-next-line
@@ -190,15 +191,15 @@ export default function DashboardPage() {
           setEditTypeOptions(["number"]);
           setEditForm(f => ({ ...f, type: "number" }));
         } else if (Array.isArray(data.labels) && Array.isArray(data.values)) {
-          setEditTypeOptions(["bar", "line", "pie", "doughnut", "scatter", "radar", "polarArea"]);
+          setEditTypeOptions(["bar", "line", "pie", "doughnut", "radar", "polarArea", "area"]);
           setEditForm(f => ({ ...f, type: "bar" }));
         } else {
-          setEditTypeOptions(["number", "bar", "line", "pie", "doughnut", "scatter", "radar", "polarArea"]);
+          setEditTypeOptions(["number", "bar", "line", "pie", "doughnut", "radar", "polarArea", "area"]);
         }
       })
       .catch(() => {
         setEditPreviewData(null);
-        setEditTypeOptions(["number", "bar", "line", "pie", "doughnut", "scatter", "radar", "polarArea"]);
+        setEditTypeOptions(["number", "bar", "line", "pie", "doughnut", "radar", "polarArea", "area"]);
       })
       .finally(() => setEditPreviewLoading(false));
     // eslint-disable-next-line
@@ -464,54 +465,11 @@ export default function DashboardPage() {
 
       <div className="flex">
         {/* Sidebar */}
-        <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 transform transition-transform duration-300 ease-in-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 lg:static lg:inset-0`}>
-          <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200 dark:border-gray-700">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Dashboards</h2>
-            <button
-              onClick={() => setSidebarOpen(false)}
-              className="lg:hidden p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
-            >
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-          <div className="p-4">
-            {dashboards.length === 0 ? (
-              <div className="text-center py-8">
-                <div className="text-gray-400 dark:text-gray-500 mb-4">
-                  <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                  </svg>
-                </div>
-                <p className="text-sm text-gray-500 dark:text-gray-400">No dashboards yet</p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {dashboards.map((dash) => (
-                  <Link
-                    key={dash.id}
-                    href={`/dashboard/${dash.id}`}
-                    className={`block px-3 py-2 rounded-lg text-sm transition-colors ${
-                      dash.id === dashboardId 
-                        ? 'bg-mint dark:bg-pink text-white' 
-                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
-                    }`}
-                  >
-                    <div className="flex items-center">
-                      <div className={`w-2 h-2 rounded-full mr-3 ${
-                        dash.id === dashboardId 
-                          ? 'bg-white' 
-                          : 'bg-mint dark:bg-pink'
-                      }`}></div>
-                      <span className="truncate">{dash.name}</span>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
+        <Sidebar 
+          isOpen={sidebarOpen} 
+          onClose={() => setSidebarOpen(false)} 
+          currentDashboardId={dashboardId}
+        />
 
         {/* Main Content */}
         <div className="flex-1">
@@ -538,17 +496,17 @@ export default function DashboardPage() {
                     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
                       <form
                         onSubmit={handleAddChart}
-                        className="bg-white rounded-2xl shadow-2xl p-8 max-w-lg w-full mx-4"
+                        className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 max-w-lg w-full mx-4"
                       >
                         <div className="mb-6">
-                          <h2 className="text-2xl font-bold text-gray-900 mb-2">Add Chart</h2>
-                          <p className="text-gray-600">Configure your chart below. Chart type options will update based on the endpoint shape.</p>
+                          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Add Chart</h2>
+                          <p className="text-gray-600 dark:text-gray-300">Configure your chart below. Chart type options will update based on the endpoint shape.</p>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
                           <div>
                             <label className="block text-xs mb-1">Title</label>
                             <input
-                              className="border border-gray-200 rounded-lg px-3 py-2 w-full bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-300"
+                              className="border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-400 focus:border-blue-300 dark:focus:border-blue-400"
                               value={addForm.title}
                               onChange={e => setAddForm(f => ({ ...f, title: e.target.value }))}
                               required
@@ -557,7 +515,7 @@ export default function DashboardPage() {
                           <div>
                             <label className="block text-xs mb-1">Endpoint</label>
                             <select
-                              className="border border-gray-200 rounded-lg px-3 py-2 w-full bg-white"
+                              className="border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                               value={addForm.dataEndpoint}
                               onChange={e => setAddForm(f => ({ ...f, dataEndpoint: e.target.value }))}
                             >
@@ -569,7 +527,7 @@ export default function DashboardPage() {
                           <div>
                             <label className="block text-xs mb-1">Color Palette</label>
                             <select
-                              className="border border-gray-200 rounded-lg px-3 py-2 w-full bg-white"
+                              className="border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                               value={addForm.color}
                               onChange={e => setAddForm(f => ({ ...f, color: e.target.value }))}
                             >
@@ -581,7 +539,7 @@ export default function DashboardPage() {
                           <div>
                             <label className="block text-xs mb-1">Chart Type</label>
                             <select
-                              className="border border-gray-200 rounded-lg px-3 py-2 w-full bg-white"
+                              className="border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                               value={addForm.type}
                               onChange={e => setAddForm(f => ({ ...f, type: e.target.value }))}
                             >
@@ -624,7 +582,7 @@ export default function DashboardPage() {
                           <div className="mt-4 bg-gray-50 rounded-xl p-4 border border-gray-100">
                             <div className="mb-2 text-sm text-gray-500 font-medium">Chart Preview</div>
                             <ChartRenderer
-                              type={addForm.type as "number" | "bar" | "line" | "pie" | "doughnut" | "scatter" | "radar" | "polarArea"}
+                              type={addForm.type as "number" | "bar" | "line" | "pie" | "doughnut" | "radar" | "polarArea" | "area"}
                               title={addForm.title || "Preview"}
                               data={previewData}
                               color={addForm.color}
@@ -644,6 +602,8 @@ export default function DashboardPage() {
                       y: chart.y || 0,
                       w: chart.w || 6,
                       h: chart.h || 4,
+                      minW: 3,
+                      minH: 3,
                     })) }}
                     breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
                     cols={{ lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 }}
@@ -686,17 +646,17 @@ export default function DashboardPage() {
                     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
                       <form
                         onSubmit={handleEditChart}
-                        className="bg-white rounded-2xl shadow-2xl p-8 max-w-lg w-full mx-4"
+                        className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 max-w-lg w-full mx-4"
                       >
                         <div className="mb-6">
-                          <h2 className="text-2xl font-bold text-gray-900 mb-2">Edit Chart</h2>
-                          <p className="text-gray-600">Update your chart configuration below.</p>
+                          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Edit Chart</h2>
+                          <p className="text-gray-600 dark:text-gray-300">Update your chart configuration below.</p>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
                           <div>
                             <label className="block text-xs mb-1">Title</label>
                             <input
-                              className="border border-gray-200 rounded-lg px-3 py-2 w-full bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-300"
+                              className="border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-400 focus:border-blue-300 dark:focus:border-blue-400"
                               value={editForm.title}
                               onChange={e => setEditForm(f => ({ ...f, title: e.target.value }))}
                               required
@@ -705,7 +665,7 @@ export default function DashboardPage() {
                           <div>
                             <label className="block text-xs mb-1">Endpoint</label>
                             <select
-                              className="border border-gray-200 rounded-lg px-3 py-2 w-full bg-white"
+                              className="border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                               value={editForm.dataEndpoint}
                               onChange={e => setEditForm(f => ({ ...f, dataEndpoint: e.target.value }))}
                             >
@@ -717,7 +677,7 @@ export default function DashboardPage() {
                           <div>
                             <label className="block text-xs mb-1">Color Palette</label>
                             <select
-                              className="border border-gray-200 rounded-lg px-3 py-2 w-full bg-white"
+                              className="border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                               value={editForm.color}
                               onChange={e => setEditForm(f => ({ ...f, color: e.target.value }))}
                             >
@@ -729,7 +689,7 @@ export default function DashboardPage() {
                           <div>
                             <label className="block text-xs mb-1">Chart Type</label>
                             <select
-                              className="border border-gray-200 rounded-lg px-3 py-2 w-full bg-white"
+                              className="border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                               value={editForm.type}
                               onChange={e => setEditForm(f => ({ ...f, type: e.target.value }))}
                             >
@@ -772,7 +732,7 @@ export default function DashboardPage() {
                           <div className="mt-4 bg-gray-50 rounded-xl p-4 border border-gray-100">
                             <div className="mb-2 text-sm text-gray-500 font-medium">Chart Preview</div>
                             <ChartRenderer
-                              type={editForm.type as "number" | "bar" | "line" | "pie" | "doughnut" | "scatter" | "radar" | "polarArea"}
+                              type={editForm.type as "number" | "bar" | "line" | "pie" | "doughnut" | "radar" | "polarArea" | "area"}
                               title={editForm.title || "Preview"}
                               data={editPreviewData}
                               color={editForm.color}
@@ -786,9 +746,9 @@ export default function DashboardPage() {
                   {/* Delete Confirmation Modal */}
                   {deleteChartId && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-                      <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4">
-                        <h2 className="text-2xl font-bold text-gray-900 mb-4">Delete Chart</h2>
-                        <p className="text-gray-600 mb-6">Are you sure you want to delete this chart? This action cannot be undone.</p>
+                      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4">
+                        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Delete Chart</h2>
+                        <p className="text-gray-600 dark:text-gray-300 mb-6">Are you sure you want to delete this chart? This action cannot be undone.</p>
                         <div className="flex gap-3">
                           <button
                             onClick={() => handleDeleteChart(deleteChartId)}
@@ -820,13 +780,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Overlay for mobile sidebar */}
-      {sidebarOpen && (
-        <div 
-          className="fixed inset-0 z-40 bg-black bg-opacity-50 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
+
     </div>
   );
 }
@@ -855,14 +809,26 @@ function FullscreenChartModal({ chart, onClose }: { chart: Chart, onClose: () =>
       .then(setData);
   }, [chart.dataEndpoint]);
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
-      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl p-2 sm:p-4 max-w-2xl w-full mx-2 sm:mx-4 relative flex flex-col items-center">
-        <button onClick={onClose} className="absolute top-3 right-3 text-gray-400 hover:text-mint dark:hover:text-pink text-2xl font-bold">×</button>
-        <div className="w-full h-[60vw] max-h-[70vh] min-h-[300px] flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl p-6 max-w-6xl w-full max-h-[98vh] relative flex flex-col">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-white">{chart.title}</h3>
+          <button 
+            onClick={onClose} 
+            className="text-gray-400 hover:text-mint dark:hover:text-pink text-2xl font-bold p-2"
+          >
+            ×
+          </button>
+        </div>
+        <div className="flex-1 min-h-0 overflow-hidden">
           {data ? (
-            <ChartRenderer type={chart.type} title={chart.title} data={data} color={chart.color} fullscreen />
+            <div className="w-full h-full" style={{ minHeight: '600px', maxHeight: 'calc(98vh - 160px)' }}>
+              <ChartRenderer type={chart.type} title={chart.title} data={data} color={chart.color} fullscreen />
+            </div>
           ) : (
-            <div className="text-gray-400">Loading chart...</div>
+            <div className="flex items-center justify-center h-full">
+              <div className="text-gray-400">Loading chart...</div>
+            </div>
           )}
         </div>
       </div>

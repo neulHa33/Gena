@@ -1,4 +1,4 @@
-export type ChartType = 'number' | 'bar' | 'line' | 'pie' | 'doughnut' | 'area' | 'horizontalBar' | 'scatter' | 'radar' | 'polarArea';
+export type ChartType = 'number' | 'bar' | 'line' | 'pie' | 'doughnut' | 'area' | 'horizontalBar' | 'radar' | 'polarArea';
 
 export interface Chart {
   id: string;

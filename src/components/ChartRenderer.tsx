@@ -44,6 +44,13 @@ type ChartRendererProps = {
   fullscreen?: boolean;
 };
 
+// Dynamic color palette for charts
+const colorPalette = [
+  '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6',
+  '#06B6D4', '#84CC16', '#F97316', '#EC4899', '#6366F1',
+  '#14B8A6', '#FBBF24', '#F87171', '#A78BFA', '#34D399'
+];
+
 const ChartRenderer = React.memo(({ type, title, data, color = '#72E9BF', fullscreen = false }: ChartRendererProps) => {
   // Memoize chart data and options to prevent unnecessary re-renders
   const chartData = useMemo(() => {
@@ -65,15 +72,35 @@ const ChartRenderer = React.memo(({ type, title, data, color = '#72E9BF', fullsc
 
     if (data.labels && data.values) {
       // Labels and values format
-      return {
-        labels: data.labels,
-        datasets: [{
-          data: data.values,
-          backgroundColor: Array(data.values.length).fill(color),
-          borderColor: Array(data.values.length).fill(color),
-          borderWidth: 1,
-        }],
-      };
+      const isCircularChart = type === 'pie' || type === 'doughnut' || type === 'polarArea';
+      
+      if (isCircularChart) {
+        // Use dynamic colors for circular charts
+        const dynamicColors = data.values.map((_: any, index: number) => 
+          colorPalette[index % colorPalette.length]
+        );
+        
+        return {
+          labels: data.labels,
+          datasets: [{
+            data: data.values,
+            backgroundColor: dynamicColors,
+            borderColor: dynamicColors,
+            borderWidth: 1,
+          }],
+        };
+      } else {
+        // Use single color for bar, line, and other charts
+        return {
+          labels: data.labels,
+          datasets: [{
+            data: data.values,
+            backgroundColor: Array(data.values.length).fill(color),
+            borderColor: Array(data.values.length).fill(color),
+            borderWidth: 1,
+          }],
+        };
+      }
     }
 
     if (data.datasets) {
@@ -82,56 +109,60 @@ const ChartRenderer = React.memo(({ type, title, data, color = '#72E9BF', fullsc
     }
 
     return null;
-  }, [data, color]);
+  }, [data, color, type]);
 
-  const chartOptions = useMemo(() => ({
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        display: false,
-      },
-      tooltip: {
-        enabled: true,
-      },
-      datalabels: {
-        display: type === 'pie' || type === 'doughnut',
-        color: '#fff',
-        font: {
-          weight: 'bold' as const,
-          size: 12
+  const chartOptions = useMemo(() => {
+    const baseOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: false,
         },
-        formatter: (value: any, context: any) => {
-          if (type === 'pie' || type === 'doughnut') {
-            const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
-            const percentage = ((value / total) * 100).toFixed(1);
-            return `${percentage}%`;
+        tooltip: {
+          enabled: true,
+        },
+        datalabels: {
+          display: type === 'pie' || type === 'doughnut',
+          color: '#fff',
+          font: {
+            weight: 'bold' as const,
+            size: 12
+          },
+          formatter: (value: any, context: any) => {
+            if (type === 'pie' || type === 'doughnut') {
+              const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
+              const percentage = ((value / total) * 100).toFixed(1);
+              return `${percentage}%`;
+            }
+            return value;
           }
-          return value;
         }
-      }
-    },
-    scales: {
-      x: {
-        display: type !== 'pie' && type !== 'doughnut' && type !== 'polarArea',
-        grid: {
-          display: false,
+      },
+      scales: {
+        x: {
+          display: type !== 'pie' && type !== 'doughnut' && type !== 'polarArea',
+          grid: {
+            display: false,
+          },
+        },
+        y: {
+          display: type !== 'pie' && type !== 'doughnut' && type !== 'polarArea',
+          grid: {
+            display: false,
+          },
         },
       },
-      y: {
-        display: type !== 'pie' && type !== 'doughnut' && type !== 'polarArea',
-        grid: {
-          display: false,
+      elements: {
+        point: {
+          radius: type === 'radar' ? 3 : 6,
+          hoverRadius: type === 'radar' ? 5 : 8,
         },
       },
-    },
-    elements: {
-      point: {
-        radius: type === 'radar' ? 3 : 6,
-        hoverRadius: type === 'radar' ? 5 : 8,
-      },
-    },
-  }), [type]);
+    };
+
+    return baseOptions;
+  }, [type]);
 
   if (!chartData) {
     return (
@@ -164,11 +195,31 @@ const ChartRenderer = React.memo(({ type, title, data, color = '#72E9BF', fullsc
       }));
     }
 
+    // Limit labels for circular charts to prevent overlap
+    if ((type === 'pie' || type === 'doughnut' || type === 'polarArea') && baseData.labels && baseData.labels.length > 3) {
+      const sortedData = baseData.labels.map((label: string, index: number) => ({
+        label,
+        value: baseData.datasets[0].data[index],
+        color: baseData.datasets[0].backgroundColor[index]
+      })).sort((a: any, b: any) => b.value - a.value);
+      
+      const top3 = sortedData.slice(0, 3);
+      const others = sortedData.slice(3);
+      const othersSum = others.reduce((sum: number, item: any) => sum + item.value, 0);
+      
+      if (othersSum > 0) {
+        baseData.labels = [...top3.map((item: any) => item.label), 'Others'];
+        baseData.datasets[0].data = [...top3.map((item: any) => item.value), othersSum];
+        baseData.datasets[0].backgroundColor = [...top3.map((item: any) => item.color), '#9CA3AF'];
+        baseData.datasets[0].borderColor = baseData.datasets[0].backgroundColor;
+      }
+    }
+
     return baseData;
   }, [chartData, type]);
 
   return (
-    <div className={`w-full h-full ${fullscreen ? 'h-screen' : 'h-64'}`}>
+    <div className={`w-full h-full ${fullscreen ? 'h-screen' : 'h-64'}`} style={{ minHeight: '200px' }}>
       {type === 'number' && (
         <div className="flex items-center justify-center h-full">
           <div className="text-center">
@@ -179,13 +230,14 @@ const ChartRenderer = React.memo(({ type, title, data, color = '#72E9BF', fullsc
           </div>
         </div>
       )}
-      {type === 'bar' && <Bar data={modifiedChartData} options={chartOptions} />}
-      {type === 'line' && <Line data={modifiedChartData} options={chartOptions} />}
-      {type === 'pie' && <Pie data={modifiedChartData} options={chartOptions} />}
-      {type === 'doughnut' && <Doughnut data={modifiedChartData} options={chartOptions} />}
-      {type === 'scatter' && <Scatter data={modifiedChartData} options={chartOptions} />}
-      {type === 'radar' && <Radar data={modifiedChartData} options={chartOptions} />}
-      {type === 'polarArea' && <PolarArea data={modifiedChartData} options={chartOptions} />}
+      {type === 'bar' && <Bar data={modifiedChartData} options={chartOptions as any} />}
+      {type === 'line' && <Line data={modifiedChartData} options={chartOptions as any} />}
+      {type === 'pie' && <Pie data={modifiedChartData} options={chartOptions as any} />}
+      {type === 'doughnut' && <Doughnut data={modifiedChartData} options={chartOptions as any} />}
+      {type === 'area' && <Line data={modifiedChartData} options={chartOptions as any} />}
+
+      {type === 'radar' && <Radar data={modifiedChartData} options={chartOptions as any} />}
+      {type === 'polarArea' && <PolarArea data={modifiedChartData} options={chartOptions as any} />}
     </div>
   );
 });

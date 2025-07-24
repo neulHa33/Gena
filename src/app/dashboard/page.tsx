@@ -18,18 +18,20 @@ export default function DashboardListPage() {
   const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
 
   useEffect(() => {
-    // Load dashboards from localStorage
-    try {
-      const savedDashboards = localStorage.getItem('dashboards');
-      if (savedDashboards) {
-        const parsedDashboards = JSON.parse(savedDashboards);
-        setDashboards(parsedDashboards);
+    async function fetchDashboards() {
+      try {
+        const res = await fetch('/api/dashboards');
+        if (res.ok) {
+          const data = await res.json();
+          setDashboards(data);
+        }
+      } catch (error) {
+        console.error('Failed to load dashboards:', error);
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error('Failed to load dashboards:', error);
-    } finally {
-      setLoading(false);
     }
+    fetchDashboards();
   }, []);
 
   const handleCreateDashboard = () => {
@@ -40,9 +42,15 @@ export default function DashboardListPage() {
     setDeleteLoading(dashboardId);
     
     try {
-      const updatedDashboards = dashboards.filter(d => d.id !== dashboardId);
-      setDashboards(updatedDashboards);
-      localStorage.setItem('dashboards', JSON.stringify(updatedDashboards));
+      const response = await fetch(`/api/dashboards/${dashboardId}`, {
+        method: 'DELETE',
+      });
+      
+      if (response.ok) {
+        setDashboards(prev => prev.filter(d => d.id !== dashboardId));
+      } else {
+        alert('Failed to delete dashboard. Please try again.');
+      }
     } catch (error) {
       console.error('Failed to delete dashboard:', error);
       alert('Failed to delete dashboard. Please try again.');
@@ -107,7 +115,7 @@ export default function DashboardListPage() {
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-3 gap-6">
               {dashboards.map((dashboard) => (
                 <div
                   key={dashboard.id}

@@ -18,6 +18,9 @@ export default function Sidebar({ isOpen, onClose, currentDashboardId }: Sidebar
   const router = useRouter();
   const [dashboards, setDashboards] = useState<Dashboard[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editingDashboard, setEditingDashboard] = useState<string | null>(null);
+  const [editName, setEditName] = useState('');
+  const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchDashboards() {
@@ -37,6 +40,57 @@ export default function Sidebar({ isOpen, onClose, currentDashboardId }: Sidebar
   const handleDashboardClick = (dashboardId: string) => {
     router.push(`/dashboard/${dashboardId}`);
     onClose();
+  };
+
+  const handleRenameStart = (dashboard: Dashboard) => {
+    setEditingDashboard(dashboard.id);
+    setEditName(dashboard.name);
+  };
+
+  const handleRenameSave = async (dashboardId: string) => {
+    try {
+      const response = await fetch(`/api/dashboards/${dashboardId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: editName }),
+      });
+      
+      if (response.ok) {
+        setDashboards(prev => 
+          prev.map(d => d.id === dashboardId ? { ...d, name: editName } : d)
+        );
+        setEditingDashboard(null);
+        setEditName('');
+      }
+    } catch (error) {
+      console.error('Failed to rename dashboard:', error);
+    }
+  };
+
+  const handleRenameCancel = () => {
+    setEditingDashboard(null);
+    setEditName('');
+  };
+
+  const handleDeleteDashboard = async (dashboardId: string) => {
+    setDeleteLoading(dashboardId);
+    try {
+      const response = await fetch(`/api/dashboards/${dashboardId}`, {
+        method: 'DELETE',
+      });
+      
+      if (response.ok) {
+        setDashboards(prev => prev.filter(d => d.id !== dashboardId));
+        // If we're on the deleted dashboard, redirect to home
+        if (currentDashboardId === dashboardId) {
+          router.push('/');
+        }
+      }
+    } catch (error) {
+      console.error('Failed to delete dashboard:', error);
+    } finally {
+      setDeleteLoading(null);
+    }
   };
 
   return (
@@ -81,19 +135,82 @@ export default function Sidebar({ isOpen, onClose, currentDashboardId }: Sidebar
           ) : (
             <div className="space-y-2">
               {dashboards.map((dashboard) => (
-                <button
-                  key={dashboard.id}
-                  onClick={() => handleDashboardClick(dashboard.id)}
-                  className={`w-full text-left p-3 rounded-lg transition-all duration-200 ${
-                    dashboard.id === currentDashboardId
-                      ? 'bg-mint dark:bg-pink text-gray-900 font-medium'
-                      : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="truncate">{dashboard.name}</span>
-                  </div>
-                </button>
+                <div key={dashboard.id} className="group">
+                  {editingDashboard === dashboard.id ? (
+                    // Edit mode
+                    <div className="flex items-center gap-2 p-2 rounded-lg bg-gray-50 dark:bg-gray-800">
+                      <input
+                        type="text"
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            handleRenameSave(dashboard.id);
+                          } else if (e.key === 'Escape') {
+                            handleRenameCancel();
+                          }
+                        }}
+                        className="flex-1 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-mint dark:focus:ring-pink"
+                        autoFocus
+                      />
+                      <button
+                        onClick={() => handleRenameSave(dashboard.id)}
+                        className="text-green-600 hover:text-green-700 p-1"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={handleRenameCancel}
+                        className="text-gray-400 hover:text-gray-600 p-1"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                  ) : (
+                    // View mode
+                    <div className="flex items-center justify-between p-3 rounded-lg transition-all duration-200 hover:bg-gray-100 dark:hover:bg-gray-800">
+                      <button
+                        onClick={() => handleDashboardClick(dashboard.id)}
+                        className={`flex-1 text-left ${
+                          dashboard.id === currentDashboardId
+                            ? 'text-gray-900 dark:text-white font-medium'
+                            : 'text-gray-700 dark:text-gray-300'
+                        }`}
+                      >
+                        <span className="truncate">{dashboard.name}</span>
+                      </button>
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={() => handleRenameStart(dashboard)}
+                          className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1"
+                          title="Rename dashboard"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                        </button>
+                        <button
+                          onClick={() => handleDeleteDashboard(dashboard.id)}
+                          disabled={deleteLoading === dashboard.id}
+                          className="text-gray-400 hover:text-red-500 p-1 transition-colors"
+                          title="Delete dashboard"
+                        >
+                          {deleteLoading === dashboard.id ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-500"></div>
+                          ) : (
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               ))}
             </div>
           )}

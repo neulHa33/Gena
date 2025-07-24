@@ -1,7 +1,7 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Responsive, WidthProvider } from 'react-grid-layout';
+import GridLayout from 'react-grid-layout';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 import ChartRenderer from "../../../components/ChartRenderer";
@@ -10,8 +10,6 @@ import jsPDF from 'jspdf';
 import Link from "next/link";
 import DarkModeToggle from "../../../components/DarkModeToggle";
 import Sidebar from "../../../components/Sidebar";
-
-const ResponsiveGridLayout = WidthProvider(Responsive);
 
 interface Chart {
   id: string;
@@ -95,6 +93,18 @@ export default function DashboardPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [dashboards, setDashboards] = useState<any[]>([]);
 
+  // --- Editable title/description state ---
+  const [editTitle, setEditTitle] = useState<string>("");
+  const [editDescription, setEditDescription] = useState<string>("");
+  const [dashboardEditLoading, setDashboardEditLoading] = useState(false);
+
+  // --- ResponsiveGridLayout layouts state ---
+  const [layouts, setLayouts] = useState<any>({});
+  const [layoutsBase, setLayoutsBase] = useState<any>({});
+  const [currentBreakpoint, setCurrentBreakpoint] = useState('lg');
+  const gridContainerRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
+
   useEffect(() => {
     async function fetchData() {
       setLoading(true);
@@ -131,6 +141,128 @@ export default function DashboardPage() {
     }
     fetchData();
   }, [dashboardId, router]);
+
+  useEffect(() => {
+    if (dashboard) {
+      setEditTitle(dashboard.name);
+      setEditDescription(dashboard.description || "");
+    }
+  }, [dashboard]);
+
+  // Set up layouts for all breakpoints
+  useEffect(() => {
+    if (charts && charts.length > 0) {
+      setLayouts({
+        lg: charts.map(chart => ({
+          i: chart.id,
+          x: chart.x || 0,
+          y: chart.y || 0,
+          w: chart.w || 6,
+          h: chart.h || 6,
+          minW: 3,
+          minH: 4,
+        })),
+        md: charts.map(chart => ({
+          i: chart.id,
+          x: chart.x || 0,
+          y: chart.y || 0,
+          w: Math.max(3, Math.floor((chart.w || 6) / 2)),
+          h: chart.h || 6,
+          minW: 2,
+          minH: 4,
+        })),
+        sm: charts.map(chart => ({
+          i: chart.id,
+          x: 0,
+          y: chart.y || 0,
+          w: 6,
+          h: chart.h || 6,
+          minW: 2,
+          minH: 4,
+        })),
+        xs: charts.map(chart => ({
+          i: chart.id,
+          x: 0,
+          y: chart.y || 0,
+          w: 4,
+          h: chart.h || 6,
+          minW: 2,
+          minH: 4,
+        })),
+        xxs: charts.map(chart => ({
+          i: chart.id,
+          x: 0,
+          y: chart.y || 0,
+          w: 2,
+          h: chart.h || 6,
+          minW: 2,
+          minH: 4,
+        })),
+      });
+      setLayoutsBase({
+        lg: charts.map(chart => ({
+          i: chart.id,
+          x: chart.x || 0,
+          y: chart.y || 0,
+          w: chart.w || 6,
+          h: chart.h || 6,
+          minW: 3,
+          minH: 4,
+        })),
+        md: charts.map(chart => ({
+          i: chart.id,
+          x: chart.x || 0,
+          y: chart.y || 0,
+          w: Math.max(3, Math.floor((chart.w || 6) / 2)),
+          h: chart.h || 6,
+          minW: 2,
+          minH: 4,
+        })),
+        sm: charts.map(chart => ({
+          i: chart.id,
+          x: 0,
+          y: chart.y || 0,
+          w: 6,
+          h: chart.h || 6,
+          minW: 2,
+          minH: 4,
+        })),
+        xs: charts.map(chart => ({
+          i: chart.id,
+          x: 0,
+          y: chart.y || 0,
+          w: 4,
+          h: chart.h || 6,
+          minW: 2,
+          minH: 4,
+        })),
+        xxs: charts.map(chart => ({
+          i: chart.id,
+          x: 0,
+          y: chart.y || 0,
+          w: 2,
+          h: chart.h || 6,
+          minW: 2,
+          minH: 4,
+        })),
+      });
+    }
+  }, [charts]);
+
+  // Calculate scale factor for grid zoom-out effect
+  useEffect(() => {
+    function handleResize() {
+      const baseWidth = 2000; // match the GridLayout width
+      if (gridContainerRef.current) {
+        const containerWidth = gridContainerRef.current.offsetWidth;
+        const newScale = Math.min(1, containerWidth / baseWidth);
+        setScale(newScale);
+      }
+    }
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Helper to get charts in dashboard order
   const orderedCharts = charts;
@@ -391,6 +523,27 @@ export default function DashboardPage() {
     }
   };
 
+  // Save dashboard title/description and layout
+  const handleSaveDashboard = async () => {
+    if (!dashboard) return;
+    setDashboardEditLoading(true);
+    try {
+      // Save the current layout for the current breakpoint as the base layout
+      setLayoutsBase((prev: any) => ({ ...prev, [currentBreakpoint]: layouts[currentBreakpoint] }));
+      const response = await fetch(`/api/dashboards/${dashboard.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: editTitle, description: editDescription }),
+      });
+      if (response.ok) {
+        const updated = await response.json();
+        setDashboard(updated);
+      }
+    } finally {
+      setDashboardEditLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-white dark:bg-black flex items-center justify-center">
@@ -480,11 +633,32 @@ export default function DashboardPage() {
                 <div>Loading...</div>
               ) : dashboard ? (
                 <>
+                  <div className="p-4 flex items-center gap-4">
+                    <button
+                      className="btn btn-primary px-6 py-2 rounded-xl shadow hover:shadow-lg flex items-center gap-2"
+                      onClick={handleSaveDashboard}
+                      disabled={dashboardEditLoading}
+                    >
+                      {dashboardEditLoading ? 'Saving...' : 'Save'}
+                    </button>
+                  </div>
                   <div className="p-4">
-                      <h1 className="text-5xl font-bold mb-2 tracking-tight">{dashboard.name}</h1>
-                      {dashboard.description && (
-                        <div className="text-lg text-gray-600 dark:text-gray-300 mb-1">{dashboard.description}</div>
-                      )}
+                      <input
+                        className="text-5xl font-bold mb-2 tracking-tight bg-transparent border-none outline-none w-full"
+                        value={editTitle}
+                        onChange={e => setEditTitle(e.target.value)}
+                        disabled={dashboardEditLoading}
+                        style={{ fontSize: '2.5rem' }}
+                      />
+                      <textarea
+                        className="text-lg text-gray-600 dark:text-gray-300 mb-1 bg-transparent border-none outline-none w-full resize-none"
+                        value={editDescription}
+                        onChange={e => setEditDescription(e.target.value)}
+                        placeholder="Add a description..."
+                        rows={2}
+                        disabled={dashboardEditLoading}
+                        style={{ minHeight: 32 }}
+                      />
                       {dashboard.createdAt && (
                         <div className="text-sm text-gray-400 dark:text-gray-500">
                           Created on {new Date(dashboard.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}
@@ -605,52 +779,51 @@ export default function DashboardPage() {
                   )}
 
                   {/* Dashboard Grid */}
-                  <ResponsiveGridLayout
-                    className="layout"
-                    layouts={{ lg: orderedCharts.map(chart => ({
-                      i: chart.id,
-                      x: chart.x || 0,
-                      y: chart.y || 0,
-                      w: chart.w || 6,
-                      h: chart.h || 4,
-                      minW: 3,
-                      minH: 2,
-                    })) }}
-                    breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
-                    cols={{ lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 }}
-                    onLayoutChange={onLayoutChange}
-                    isDraggable={true}
-                    isResizable={true}
-                    margin={[16, 16]}
-                    containerPadding={[16, 16]}
-                  >
-                    {orderedCharts.map(chart => (
-                      <div key={chart.id} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
-                        <div className="flex items-center justify-between mb-4">
-                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{chart.title}</h3>
-                          <div className="flex items-center space-x-2">
-                            <button
-                              onClick={() => setEditChart(chart)}
-                              className="text-gray-400 hover:text-mint dark:hover:text-pink p-1"
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                              </svg>
-                            </button>
-                            <button
-                              onClick={() => setDeleteChartId(chart.id)}
-                              className="text-gray-400 hover:text-red-500 p-1"
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                              </svg>
-                            </button>
+                  <div ref={gridContainerRef} style={{ width: '100%', overflow: 'auto' }}>
+                    <div style={{ width: '2000px', transform: `scale(${scale})`, transformOrigin: 'top left' }}>
+                      <GridLayout
+                        className="layout"
+                        layout={layouts.lg || []}
+                        cols={12}
+                        rowHeight={80}
+                        width={2000}
+                        onLayoutChange={onLayoutChange}
+                        isDraggable={true}
+                        isResizable={true}
+                        margin={[16, 16]}
+                        containerPadding={[16, 16]}
+                      >
+                        {orderedCharts.map(chart => (
+                          <div key={chart.id} className="dashboard-container bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4" style={{ minHeight: '320px', height: '100%' }}>
+                            <div className="flex items-center justify-between mb-4">
+                              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{chart.title}</h3>
+                              <div className="flex items-center space-x-2">
+                                <button
+                                  onClick={() => setEditChart(chart)}
+                                  className="text-gray-400 hover:text-mint dark:hover:text-pink p-1"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                  </svg>
+                                </button>
+                                <button
+                                  onClick={() => setDeleteChartId(chart.id)}
+                                  className="text-gray-400 hover:text-red-500 p-1"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                  </svg>
+                                </button>
+                              </div>
+                            </div>
+                            <div className="flex-1" style={{ height: 'calc(100% - 60px)' }}>
+                              <ChartContainer chart={chart} setFullscreenChart={setFullscreenChart} />
+                            </div>
                           </div>
-                        </div>
-                        <ChartContainer chart={chart} setFullscreenChart={setFullscreenChart} />
-                      </div>
-                    ))}
-                  </ResponsiveGridLayout>
+                        ))}
+                      </GridLayout>
+                    </div>
+                  </div>
 
                   {/* Edit Chart Modal */}
                   {editChart && (
@@ -808,11 +981,13 @@ function ChartContainer({ chart, setFullscreenChart }: { chart: Chart, setFullsc
     setFullscreenChart(chart);
   };
   
-  if (!data) return <div className="bg-white dark:bg-gray-800 shadow rounded p-6">Loading chart...</div>;
+  if (!data) return <div className="bg-white dark:bg-gray-800 shadow rounded p-6 h-full flex items-center justify-center">Loading chart...</div>;
   return (
-    <div onClick={handleClick} className="cursor-pointer group" style={{ pointerEvents: 'auto' }}>
-      <ChartRenderer type={chart.type} title={chart.title} data={data} color={chart.color} />
-      <div className="text-xs text-gray-400 text-center mt-2 group-hover:text-mint dark:group-hover:text-pink">Click to enlarge</div>
+    <div onClick={handleClick} className="cursor-pointer group h-full flex flex-col" style={{ pointerEvents: 'auto' }}>
+      <div className="flex-1 min-h-0">
+        <ChartRenderer type={chart.type} title={chart.title} data={data} color={chart.color} />
+      </div>
+      <div className="text-xs text-gray-400 text-center mt-2 group-hover:text-mint dark:group-hover:text-pink flex-shrink-0">Click to enlarge</div>
     </div>
   );
 }

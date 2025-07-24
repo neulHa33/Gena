@@ -89,10 +89,10 @@ export default function HomePage() {
         />
 
         {/* Main Content */}
-        <div className="flex-1">
+        <div className="flex-1 mt-5">
           <div className="px-4 py-8">
             {/* Header */}
-            <div className="text-center mb-12">
+            <div className="text-center mt-20 mb-12">
               <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
                 Dashboard Analytics
               </h1>

@@ -309,12 +309,12 @@ const ChartRenderer = React.memo(({ type, title, data, color = '#72E9BF', fullsc
 
   return (
     <div 
-      className={`w-full ${fullscreen ? 'h-full' : 'h-64'}`} 
+      className={`w-full ${fullscreen ? 'h-full' : 'h-full'}`} 
       style={{ 
-        minHeight: '200px',
+        minHeight: fullscreen ? '200px' : '100%',
         maxWidth: fullscreen ? '90vw' : '100%',
-        maxHeight: fullscreen ? '80vh' : fullscreen ? '100%' : '100%',
-        height: fullscreen ? '100%' : 'auto'
+        maxHeight: fullscreen ? '80vh' : '100%',
+        height: '100%'
       }}
     >
       {type === 'number' && (

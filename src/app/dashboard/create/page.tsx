@@ -159,7 +159,7 @@ export default function CreateDashboardPage() {
 
       <div className="max-w-4xl mx-auto mt-5 px-4 py-8">
         {/* Header */}
-        <div className="text-center mb-8 mt-20">
+        <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
             Create New Dashboard
           </h1>
@@ -215,7 +215,7 @@ export default function CreateDashboardPage() {
           <div className="flex gap-4 justify-center">
             <button
               type="button"
-              onClick={() => router.push('/dashboard')}
+              onClick={() => router.push('/')}
               className="px-6 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
             >
               Cancel

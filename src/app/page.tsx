@@ -97,30 +97,27 @@ export default function HomePage() {
         <div className="flex-1 mt-5">
           <div className="px-4 py-8">
             {/* Header */}
-            <div className="text-center mt-20 mb-12">
+            <div className="text-center mb-7">
               <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
-                Dashboard Analytics
+                 AI-Powered SQL Dashboard
               </h1>
               <p className="text-xl text-gray-600 dark:text-gray-400 mb-8">
                 Create and manage your interactive dashboards
               </p>
               <button
                 onClick={handleCreateDashboard}
-                className="bg-mint dark:bg-pink text-white px-8 py-3 rounded-lg text-lg font-semibold hover:opacity-90 transition-opacity"
+                className="bg-mint dark:bg-pink text-black px-8 py-3 rounded-lg text-lg font-semibold hover:opacity-90 transition-opacity"
               >
                 Create New Dashboard
               </button>
             </div>
 
             {/* Features Section */}
-            <div className="mt-16 max-w-5xl mx-auto">
-              <h2 className="text-2xl font-semibold text-gray-900 dark:text-white text-center mb-8">
-                Features
-              </h2>
+            <div className="max-w-5xl mx-auto">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <div className="text-center">
                   <div className="w-12 h-12 flex items-center justify-center mx-auto mb-4">
-                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-6 h-6 text-black dark:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
                     </svg>
                   </div>
@@ -129,7 +126,7 @@ export default function HomePage() {
                 </div>
                 <div className="text-center">
                   <div className="w-12 h-12 rounded-lg flex items-center justify-center mx-auto mb-4">
-                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-6 h-6 text-black dark:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
                     </svg>
                   </div>
@@ -138,7 +135,7 @@ export default function HomePage() {
                 </div>
                 <div className="text-center">
                   <div className="w-12 h-12 rounded-lg flex items-center justify-center mx-auto mb-4">
-                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-6 h-6 text-black dark:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
                     </svg>
                   </div>
@@ -149,10 +146,10 @@ export default function HomePage() {
             </div>
 
             {/* Dashboard List */}
-            <div className="mt-16 max-w-7xl mx-auto">
+            <div className="mt-8 max-w-7xl mx-auto">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">
-                  Your Dashboards
+                  Recent Dashboards
                 </h2>
                 <span className="text-gray-500 dark:text-gray-400">
                   {dashboards.length} dashboard{dashboards.length !== 1 ? 's' : ''}

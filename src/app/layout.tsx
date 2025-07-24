@@ -8,6 +8,9 @@ const inter = Inter({ subsets: ['latin'] })
 export const metadata: Metadata = {
   title: 'GenaSQL',
   description: 'Interactive dashboard with real-time analytics',
+  icons: {
+    icon: '/icon.jpg',
+  },
 }
 
 export default function RootLayout({

@@ -477,9 +477,49 @@ export default function DashboardPage() {
     
     console.log('Starting PDF export...');
     
+    // Check if dark mode is active
+    const isDarkMode = localStorage.getItem('theme') === 'dark' || 
+                      (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    
     // Add export class to body
     document.body.classList.add('exporting-pdf');
     console.log('Added exporting-pdf class to body');
+    
+    // Apply dark mode styles for PDF export if needed
+    let originalStyles: { [key: string]: string } = {};
+    if (isDarkMode) {
+      console.log('Applying dark mode styles for PDF export...');
+      
+      // Apply dark background to main container
+      const mainContainer = dashboardRef.current;
+      if (mainContainer) {
+        originalStyles.mainContainer = mainContainer.style.backgroundColor;
+        mainContainer.style.backgroundColor = '#0f172a'; // dark:bg-gray-900
+      }
+      
+      // Apply dark styles to all dashboard containers
+      const dashboardContainers = dashboardRef.current.querySelectorAll('.dashboard-container');
+      dashboardContainers.forEach((container, index) => {
+        const el = container as HTMLElement;
+        originalStyles[`container-${index}`] = el.style.backgroundColor;
+        el.style.backgroundColor = '#1e293b'; // dark:bg-gray-800
+        el.style.borderColor = '#374151'; // dark:border-gray-700
+      });
+      
+      // Apply dark text colors
+      const textElements = dashboardRef.current.querySelectorAll('h1, h2, h3, p, span, div');
+      textElements.forEach((element, index) => {
+        const el = element as HTMLElement;
+        if (el.className.includes('text-gray-900')) {
+          originalStyles[`text-${index}`] = el.style.color;
+          el.style.color = '#f8fafc'; // dark:text-white
+        }
+        if (el.className.includes('text-gray-600') || el.className.includes('text-gray-500')) {
+          originalStyles[`text-gray-${index}`] = el.style.color;
+          el.style.color = '#cbd5e1'; // dark:text-gray-300
+        }
+      });
+    }
     
     // Hide elements that shouldn't be in the export
     const elementsToHide = document.querySelectorAll('.no-export');
@@ -506,6 +546,39 @@ export default function DashboardPage() {
       pdf.save(`${dashboard?.name || 'dashboard'}.pdf`);
       console.log('PDF export completed');
     } finally {
+      // Restore original styles if dark mode was applied
+      if (isDarkMode) {
+        console.log('Restoring original styles...');
+        
+        // Restore main container background
+        const mainContainer = dashboardRef.current;
+        if (mainContainer && originalStyles.mainContainer !== undefined) {
+          mainContainer.style.backgroundColor = originalStyles.mainContainer;
+        }
+        
+        // Restore dashboard container backgrounds
+        const dashboardContainers = dashboardRef.current.querySelectorAll('.dashboard-container');
+        dashboardContainers.forEach((container, index) => {
+          const el = container as HTMLElement;
+          if (originalStyles[`container-${index}`] !== undefined) {
+            el.style.backgroundColor = originalStyles[`container-${index}`];
+            el.style.borderColor = '';
+          }
+        });
+        
+        // Restore text colors
+        const textElements = dashboardRef.current.querySelectorAll('h1, h2, h3, p, span, div');
+        textElements.forEach((element, index) => {
+          const el = element as HTMLElement;
+          if (originalStyles[`text-${index}`] !== undefined) {
+            el.style.color = originalStyles[`text-${index}`];
+          }
+          if (originalStyles[`text-gray-${index}`] !== undefined) {
+            el.style.color = originalStyles[`text-gray-${index}`];
+          }
+        });
+      }
+      
       // Remove export class
       document.body.classList.remove('exporting-pdf');
       console.log('Removed exporting-pdf class from body');

@@ -69,7 +69,12 @@ export default function HomePage() {
                 </svg>
               </button>
               <div className="ml-4">
-                <h1 className="text-xl font-semibold text-gray-900 dark:text-white">Dashboard Analytics</h1>
+                <button
+                onClick={() => router.push('/')}
+                className="text-xl font-semibold text-gray-900 dark:text-white"
+                >
+                  GENA
+                </button>
               </div>
             </div>
             <div className="flex items-center space-x-4">

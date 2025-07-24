@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const db = await readDb();
-  const { dashboardId, type, title, dataEndpoint, color } = await req.json();
+  const { dashboardId, type, title, dataEndpoint, color, x, y, w, h } = await req.json();
   const newChart: Chart = {
     id: uuidv4(),
     dashboardId,
@@ -26,6 +26,10 @@ export async function POST(req: NextRequest) {
     title,
     dataEndpoint,
     color: color || '#60a5fa',
+    x: x || 0,
+    y: y || 0,
+    w: w || 1,
+    h: h || 1,
   };
   db.data.charts.push(newChart);
   await writeDb();

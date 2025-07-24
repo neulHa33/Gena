@@ -6,7 +6,7 @@ import DarkModeToggle from '../components/DarkModeToggle'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Dashboard Analytics',
+  title: 'GenaSQL',
   description: 'Interactive dashboard with real-time analytics',
 }
 

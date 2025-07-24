@@ -139,16 +139,16 @@ export default function CreateDashboardPage() {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
               <div className="ml-4">
-                <h1 className="text-xl font-semibold text-gray-900 dark:text-white">Dashboard Analytics</h1>
+                <button
+                onClick={() => router.push('/')}
+                className="text-xl font-semibold text-gray-900 dark:text-white"
+                >
+                  GENA
+                </button>
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <button
-                onClick={() => router.push('/')}
-                className="bg-mint dark:bg-pink text-white px-4 py-2 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
-              >
-                Back to Home
-              </button>
+              
               <div className="ml-4">
                 <DarkModeToggle />
               </div>
@@ -157,9 +157,9 @@ export default function CreateDashboardPage() {
         </div>
       </nav>
 
-      <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="max-w-4xl mx-auto mt-5 px-4 py-8">
         {/* Header */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-8 mt-20">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
             Create New Dashboard
           </h1>

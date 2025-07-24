@@ -7,6 +7,10 @@ export interface Chart {
   title: string;
   dataEndpoint: string;
   color?: string;
+  x?: number;
+  y?: number;
+  w?: number;
+  h?: number;
 }
 
 export interface Dashboard {

@@ -149,7 +149,7 @@ export default function DashboardPage() {
     }
   }, [dashboard]);
 
-  // Set up layouts for all breakpoints
+  // Set up layouts for fixed 4-column grid
   useEffect(() => {
     if (charts && charts.length > 0) {
       setLayouts({
@@ -157,46 +157,12 @@ export default function DashboardPage() {
           i: chart.id,
           x: chart.x || 0,
           y: chart.y || 0,
-          w: chart.w || 6,
-          h: chart.h || 6,
-          minW: 3,
-          minH: 4,
-        })),
-        md: charts.map(chart => ({
-          i: chart.id,
-          x: chart.x || 0,
-          y: chart.y || 0,
-          w: Math.max(3, Math.floor((chart.w || 6) / 2)),
-          h: chart.h || 6,
-          minW: 2,
-          minH: 4,
-        })),
-        sm: charts.map(chart => ({
-          i: chart.id,
-          x: 0,
-          y: chart.y || 0,
-          w: 6,
-          h: chart.h || 6,
-          minW: 2,
-          minH: 4,
-        })),
-        xs: charts.map(chart => ({
-          i: chart.id,
-          x: 0,
-          y: chart.y || 0,
-          w: 4,
-          h: chart.h || 6,
-          minW: 2,
-          minH: 4,
-        })),
-        xxs: charts.map(chart => ({
-          i: chart.id,
-          x: 0,
-          y: chart.y || 0,
-          w: 2,
-          h: chart.h || 6,
-          minW: 2,
-          minH: 4,
+          w: chart.w || 1,
+          h: chart.h || 1,
+          minW: 1,
+          minH: 1,
+          maxW: 4,
+          maxH: 3,
         })),
       });
       setLayoutsBase({
@@ -204,46 +170,12 @@ export default function DashboardPage() {
           i: chart.id,
           x: chart.x || 0,
           y: chart.y || 0,
-          w: chart.w || 6,
-          h: chart.h || 6,
-          minW: 3,
-          minH: 4,
-        })),
-        md: charts.map(chart => ({
-          i: chart.id,
-          x: chart.x || 0,
-          y: chart.y || 0,
-          w: Math.max(3, Math.floor((chart.w || 6) / 2)),
-          h: chart.h || 6,
-          minW: 2,
-          minH: 4,
-        })),
-        sm: charts.map(chart => ({
-          i: chart.id,
-          x: 0,
-          y: chart.y || 0,
-          w: 6,
-          h: chart.h || 6,
-          minW: 2,
-          minH: 4,
-        })),
-        xs: charts.map(chart => ({
-          i: chart.id,
-          x: 0,
-          y: chart.y || 0,
-          w: 4,
-          h: chart.h || 6,
-          minW: 2,
-          minH: 4,
-        })),
-        xxs: charts.map(chart => ({
-          i: chart.id,
-          x: 0,
-          y: chart.y || 0,
-          w: 2,
-          h: chart.h || 6,
-          minW: 2,
-          minH: 4,
+          w: chart.w || 1,
+          h: chart.h || 1,
+          minW: 1,
+          minH: 1,
+          maxW: 4,
+          maxH: 3,
         })),
       });
     }
@@ -252,7 +184,7 @@ export default function DashboardPage() {
   // Calculate scale factor for grid zoom-out effect
   useEffect(() => {
     function handleResize() {
-      const baseWidth = 2000; // match the GridLayout width
+      const baseWidth = 1720; // match the GridLayout width
       if (gridContainerRef.current) {
         const containerWidth = gridContainerRef.current.offsetWidth;
         const newScale = Math.min(1, containerWidth / baseWidth);
@@ -266,6 +198,62 @@ export default function DashboardPage() {
 
   // Helper to get charts in dashboard order
   const orderedCharts = charts;
+
+  // Helper function to find the best position for a new chart in 4-column grid
+  const findBestPosition = (existingCharts: Chart[], newChartWidth: number = 1, newChartHeight: number = 1) => {
+    if (existingCharts.length === 0) {
+      return { x: 0, y: 0, w: newChartWidth, h: newChartHeight };
+    }
+
+    // Create a grid representation to track occupied positions (4 columns)
+    const grid: boolean[][] = [];
+    const maxCols = 4;
+    let maxY = 0;
+
+    // Initialize grid and mark occupied positions
+    existingCharts.forEach(chart => {
+      const x = chart.x || 0;
+      const y = chart.y || 0;
+      const w = chart.w || 1;
+      const h = chart.h || 1;
+      
+      maxY = Math.max(maxY, y + h);
+      
+      // Mark occupied cells
+      for (let i = y; i < y + h; i++) {
+        if (!grid[i]) grid[i] = [];
+        for (let j = x; j < x + w; j++) {
+          grid[i][j] = true;
+        }
+      }
+    });
+
+    // Find the first available position in the 4-column grid
+    for (let y = 0; y <= maxY + newChartHeight; y++) {
+      for (let x = 0; x <= maxCols - newChartWidth; x++) {
+        let canPlace = true;
+        
+        // Check if the position is available
+        for (let i = y; i < y + newChartHeight; i++) {
+          if (!grid[i]) grid[i] = [];
+          for (let j = x; j < x + newChartWidth; j++) {
+            if (grid[i][j]) {
+              canPlace = false;
+              break;
+            }
+          }
+          if (!canPlace) break;
+        }
+        
+        if (canPlace) {
+          return { x, y, w: newChartWidth, h: newChartHeight };
+        }
+      }
+    }
+
+    // Fallback: place at the very bottom
+    return { x: 0, y: maxY, w: newChartWidth, h: newChartHeight };
+  };
 
   // --- Add Chart Modal Logic ---
   useEffect(() => {
@@ -342,6 +330,9 @@ export default function DashboardPage() {
     e.preventDefault();
     setAddLoading(true);
     try {
+      // Calculate the best position for the new chart
+      const position = findBestPosition(charts, 1, 1);
+      
       const response = await fetch('/api/charts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -351,6 +342,10 @@ export default function DashboardPage() {
           title: addForm.title,
           dataEndpoint: addForm.dataEndpoint,
           color: addForm.color,
+          x: position.x,
+          y: position.y,
+          w: position.w,
+          h: position.h,
         }),
       });
       if (response.ok) {
@@ -592,22 +587,10 @@ export default function DashboardPage() {
             </div>
             <div className="flex items-center space-x-4">
               <button
-                onClick={() => setAddModalOpen(true)}
-                className="bg-mint dark:bg-pink text-white px-4 py-2 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
-              >
-                Add Chart
-              </button>
-              <button
                 onClick={handleExportPDF}
                 className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white px-3 py-2 rounded-md text-sm font-medium"
               >
                 Export PDF
-              </button>
-              <button
-                onClick={() => router.push('/')}
-                className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white px-3 py-2 rounded-md text-sm font-medium"
-              >
-                Back to Home
               </button>
               <div className="ml-4">
                 <DarkModeToggle />
@@ -633,15 +616,6 @@ export default function DashboardPage() {
                 <div>Loading...</div>
               ) : dashboard ? (
                 <>
-                  <div className="p-4 flex items-center gap-4">
-                    <button
-                      className="btn btn-primary px-6 py-2 rounded-xl shadow hover:shadow-lg flex items-center gap-2"
-                      onClick={handleSaveDashboard}
-                      disabled={dashboardEditLoading}
-                    >
-                      {dashboardEditLoading ? 'Saving...' : 'Save'}
-                    </button>
-                  </div>
                   <div className="p-4">
                       <input
                         className="text-5xl font-bold mb-2 tracking-tight bg-transparent border-none outline-none w-full"
@@ -655,7 +629,7 @@ export default function DashboardPage() {
                         value={editDescription}
                         onChange={e => setEditDescription(e.target.value)}
                         placeholder="Add a description..."
-                        rows={2}
+                        rows={1}
                         disabled={dashboardEditLoading}
                         style={{ minHeight: 32 }}
                       />
@@ -665,8 +639,9 @@ export default function DashboardPage() {
                         </div>
                       )}
                   </div>
-                  {/* Add Chart Button */}
-                  <div className="p-4 flex justify-end">
+                  <div className="p-4 flex items-center gap-4">
+
+                   {/* Add Chart Button */}
                     <button
                       className="btn btn-primary px-6 py-2 rounded-xl shadow hover:shadow-lg flex items-center gap-2"
                       onClick={() => setAddModalOpen(true)}
@@ -674,6 +649,13 @@ export default function DashboardPage() {
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
                       Add Chart
                     </button>
+                                         <button
+                       className="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-xl shadow hover:shadow-lg flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                       onClick={handleSaveDashboard}
+                       disabled={dashboardEditLoading}
+                     >
+                       {dashboardEditLoading ? 'Saving...' : 'Save'}
+                     </button>
                   </div>
 
                   {/* Add Chart Modal */}
@@ -780,21 +762,24 @@ export default function DashboardPage() {
 
                   {/* Dashboard Grid */}
                   <div ref={gridContainerRef} style={{ width: '100%', overflow: 'auto' }}>
-                    <div style={{ width: '2000px', transform: `scale(${scale})`, transformOrigin: 'top left' }}>
+                    <div style={{ width: '1720px', transform: `scale(${scale})`, transformOrigin: 'top left' }}>
                       <GridLayout
                         className="layout"
                         layout={layouts.lg || []}
-                        cols={12}
-                        rowHeight={80}
-                        width={2000}
+                        cols={4}
+                        rowHeight={430}
+                        width={1720}
                         onLayoutChange={onLayoutChange}
                         isDraggable={true}
                         isResizable={true}
-                        margin={[16, 16]}
-                        containerPadding={[16, 16]}
+                        margin={[10, 10]}
+                        containerPadding={[10, 10]}
+                        style={{ minHeight: '1300px' }}
+                        compactType={null}
+                        preventCollision={true}
                       >
-                        {orderedCharts.map(chart => (
-                          <div key={chart.id} className="dashboard-container bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4" style={{ minHeight: '320px', height: '100%' }}>
+                                                  {orderedCharts.map(chart => (
+                            <div key={chart.id} className="dashboard-container bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4" style={{ height: '100%', width: '100%'}}>
                             <div className="flex items-center justify-between mb-4">
                               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{chart.title}</h3>
                               <div className="flex items-center space-x-2">

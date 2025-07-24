@@ -105,6 +105,19 @@ export default function DashboardPage() {
   const gridContainerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
 
+  // --- Context Menu state ---
+  const [contextMenu, setContextMenu] = useState<{
+    visible: boolean;
+    x: number;
+    y: number;
+    chart: Chart | null;
+  }>({
+    visible: false,
+    x: 0,
+    y: 0,
+    chart: null,
+  });
+
   useEffect(() => {
     async function fetchData() {
       setLoading(true);
@@ -196,8 +209,63 @@ export default function DashboardPage() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Handle clicking outside context menu to close it
+  useEffect(() => {
+    const handleClickOutside = () => {
+      if (contextMenu.visible) {
+        handleContextMenuClose();
+      }
+    };
+
+    if (contextMenu.visible) {
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [contextMenu.visible]);
+
   // Helper to get charts in dashboard order
   const orderedCharts = charts;
+
+  // --- Context Menu handlers ---
+  const handleContextMenu = (e: React.MouseEvent, chart: Chart) => {
+    e.preventDefault();
+    setContextMenu({
+      visible: true,
+      x: e.clientX,
+      y: e.clientY,
+      chart,
+    });
+  };
+
+  const handleContextMenuClose = () => {
+    setContextMenu({
+      visible: false,
+      x: 0,
+      y: 0,
+      chart: null,
+    });
+  };
+
+  const handleContextMenuEdit = () => {
+    if (contextMenu.chart) {
+      setEditChart(contextMenu.chart);
+      handleContextMenuClose();
+    }
+  };
+
+  const handleContextMenuDelete = () => {
+    if (contextMenu.chart) {
+      setDeleteChartId(contextMenu.chart.id);
+      handleContextMenuClose();
+    }
+  };
+
+  const handleContextMenuEnlarge = () => {
+    if (contextMenu.chart) {
+      setFullscreenChart(contextMenu.chart);
+      handleContextMenuClose();
+    }
+  };
 
   // Helper function to find the best position for a new chart in 4-column grid
   const findBestPosition = (existingCharts: Chart[], newChartWidth: number = 1, newChartHeight: number = 1) => {
@@ -852,23 +920,34 @@ export default function DashboardPage() {
                         preventCollision={true}
                       >
                                                   {orderedCharts.map(chart => (
-                            <div key={chart.id} className="dashboard-container bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4" style={{ height: '100%', width: '100%'}}>
-                            <div className="flex items-center justify-between mb-4 relative z-10">
+                            <div 
+                              key={chart.id} 
+                              className="dashboard-container bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4" 
+                              style={{ height: '100%', width: '100%'}}
+                              onContextMenu={(e) => handleContextMenu(e, chart)}
+                            >
+                            <div className="flex items-center justify-between mb-4 relative z-50">
                               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{chart.title}</h3>
                               <div className="flex items-center space-x-2">
                                 <button
-                                  onClick={() => setEditChart(chart)}
-                                  className="text-gray-400 hover:text-mint dark:hover:text-pink p-1 relative z-20"
-                                  style={{ pointerEvents: 'auto' }}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setEditChart(chart);
+                                  }}
+                                  className="text-gray-400 hover:text-mint dark:hover:text-pink p-1 relative z-50"
+                                  style={{ pointerEvents: 'auto', position: 'relative' }}
                                 >
                                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                   </svg>
                                 </button>
                                 <button
-                                  onClick={() => setDeleteChartId(chart.id)}
-                                  className="text-gray-400 hover:text-red-500 p-1 relative z-20"
-                                  style={{ pointerEvents: 'auto' }}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setDeleteChartId(chart.id);
+                                  }}
+                                  className="text-gray-400 hover:text-red-500 p-1 relative z-50"
+                                  style={{ pointerEvents: 'auto', position: 'relative' }}
                                 >
                                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -1019,6 +1098,46 @@ export default function DashboardPage() {
               {fullscreenChart && (
                 <FullscreenChartModal chart={fullscreenChart} onClose={() => setFullscreenChart(null)} />
               )}
+
+              {/* Context Menu */}
+              {contextMenu.visible && contextMenu.chart && (
+                <div 
+                  className="fixed z-[9999] bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-2 min-w-[160px]"
+                  style={{ 
+                    left: contextMenu.x, 
+                    top: contextMenu.y,
+                    transform: 'translate(-50%, -100%)'
+                  }}
+                >
+                  <button
+                    onClick={handleContextMenuEdit}
+                    className="w-full px-4 py-2 text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                    Edit
+                  </button>
+                  <button
+                    onClick={handleContextMenuDelete}
+                    className="w-full px-4 py-2 text-left text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    Delete
+                  </button>
+                  <button
+                    onClick={handleContextMenuEnlarge}
+                    className="w-full px-4 py-2 text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                    </svg>
+                    Enlarge
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -1043,7 +1162,11 @@ function ChartContainer({ chart, setFullscreenChart }: { chart: Chart, setFullsc
   
   if (!data) return <div className="bg-white dark:bg-gray-800 shadow rounded p-6 h-full flex items-center justify-center">Loading chart...</div>;
   return (
-    <div onClick={handleClick} className="cursor-pointer group h-full flex flex-col relative z-10" style={{ pointerEvents: 'auto' }}>
+    <div 
+      onClick={handleClick} 
+      className="cursor-pointer group h-full flex flex-col relative z-30" 
+      style={{ pointerEvents: 'auto', position: 'relative' }}
+    >
       <div className="flex-1 min-h-0">
         <ChartRenderer type={chart.type} title={chart.title} data={data} color={chart.color} />
       </div>

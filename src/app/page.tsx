@@ -97,50 +97,50 @@ export default function HomePage() {
         <div className="flex-1 mt-5">
           <div className="px-4 py-8">
             {/* Header */}
-            <div className="text-center mb-7">
-              <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
-                 AI-Powered SQL Dashboard
+            <div className="text-center mb-7 animate-fade-in">
+              <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4 animate-slide-up">
+                AI-Powered SQL Dashboard
               </h1>
-              <p className="text-xl text-gray-600 dark:text-gray-400 mb-8">
-                Create and manage your interactive dashboards
+              <p className="text-xl text-gray-600 dark:text-gray-400 mb-8 animate-slide-up animation-delay-200">
+                Analyze data in seconds using natural language — no SQL needed.
               </p>
               <button
                 onClick={handleCreateDashboard}
-                className="bg-mint dark:bg-pink text-black px-8 py-3 rounded-lg text-lg font-semibold hover:opacity-90 transition-opacity"
+                className="bg-mint dark:bg-pink text-black px-8 py-3 rounded-lg text-lg font-semibold hover:opacity-90 transition-all duration-300 hover:scale-105 animate-slide-up animation-delay-400"
               >
                 Create New Dashboard
               </button>
             </div>
 
             {/* Features Section */}
-            <div className="max-w-5xl mx-auto">
+            <div className="max-w-5xl mx-auto animate-fade-in animation-delay-600">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <div className="text-center">
-                  <div className="w-12 h-12 flex items-center justify-center mx-auto mb-4">
+                <div className="text-center group hover:transform hover:scale-105 transition-all duration-300">
+                  <div className="w-12 h-12 flex items-center justify-center mx-auto mb-4 bg-mint/10 dark:bg-pink/10 rounded-lg group-hover:bg-mint/20 dark:group-hover:bg-pink/20 transition-colors">
                     <svg className="w-6 h-6 text-black dark:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
                     </svg>
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Drag & Drop</h3>
-                  <p className="text-gray-600 dark:text-gray-400">Rearrange and resize charts with ease</p>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Natural Language to SQL</h3>
+                  <p className="text-gray-600 dark:text-gray-400">Just type your question — GENA turns it into insights.</p>
                 </div>
-                <div className="text-center">
-                  <div className="w-12 h-12 rounded-lg flex items-center justify-center mx-auto mb-4">
+                <div className="text-center group hover:transform hover:scale-105 transition-all duration-300">
+                  <div className="w-12 h-12 rounded-lg flex items-center justify-center mx-auto mb-4 bg-mint/10 dark:bg-pink/10 group-hover:bg-mint/20 dark:group-hover:bg-pink/20 transition-colors">
                     <svg className="w-6 h-6 text-black dark:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
                     </svg>
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Multiple Chart Types</h3>
-                  <p className="text-gray-600 dark:text-gray-400">Bar, line, pie, and more chart types</p>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Auto-Generated Charts</h3>
+                  <p className="text-gray-600 dark:text-gray-400">GENA builds the right chart based on your intent.</p>
                 </div>
-                <div className="text-center">
-                  <div className="w-12 h-12 rounded-lg flex items-center justify-center mx-auto mb-4">
+                <div className="text-center group hover:transform hover:scale-105 transition-all duration-300">
+                  <div className="w-12 h-12 rounded-lg flex items-center justify-center mx-auto mb-4 bg-mint/10 dark:bg-pink/10 group-hover:bg-mint/20 dark:group-hover:bg-pink/20 transition-colors">
                     <svg className="w-6 h-6 text-black dark:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
                     </svg>
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Light & Dark Mode</h3>
-                  <p className="text-gray-600 dark:text-gray-400">Beautiful themes for any preference</p>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Drag & Drop Dashboard</h3>
+                  <p className="text-gray-600 dark:text-gray-400">Arrange and resize visualizations with ease.</p>
                 </div>
               </div>
             </div>
@@ -174,7 +174,10 @@ export default function HomePage() {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {dashboards.slice(0, 3).map((dashboard) => (
+                  {dashboards
+                    .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
+                    .slice(0, 3)
+                    .map((dashboard) => (
                     <Link
                       key={dashboard.id}
                       href={`/dashboard/${dashboard.id}`}

@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import GridLayout from 'react-grid-layout';
 import 'react-grid-layout/css/styles.css';
@@ -33,7 +33,8 @@ interface Dashboard {
   description?: string;
 }
 
-const chartOptions = [
+// Constants moved outside component to prevent recreation
+const CHART_OPTIONS = [
   { value: "number", label: "Number Display" },
   { value: "bar", label: "Bar Chart" },
   { value: "line", label: "Line Chart" },
@@ -42,24 +43,26 @@ const chartOptions = [
   { value: "radar", label: "Radar Chart" },
   { value: "polarArea", label: "Polar Area" },
   { value: "area", label: "Area Chart" },
-];
+] as const;
 
-const dataEndpoints = [
+const DATA_ENDPOINTS = [
   { value: "/api/data/total_revenue", label: "Total Revenue" },
   { value: "/api/data/orders_over_time", label: "Orders Over Time" },
   { value: "/api/data/signups_by_region", label: "Signups by Region" },
   { value: "/api/data/user_growth_by_month", label: "User Growth by Month" },
   { value: "/api/data/conversion_rate_over_time", label: "Conversion Rate Over Time" },
   { value: "/api/data/page_views_by_category", label: "Page Views by Category" },
-];
+] as const;
 
-const chartColors = [
+const CHART_COLORS = [
   { value: "#60a5fa", label: "Blue" },
   { value: "#34d399", label: "Green" },
   { value: "#fbbf24", label: "Yellow" },
   { value: "#f87171", label: "Red" },
   { value: "#a78bfa", label: "Purple" },
-];
+] as const;
+
+const TYPE_OPTIONS = ["number", "bar", "line", "pie", "doughnut", "radar", "polarArea", "area"] as const;
 
 export default function DashboardPage() {
   const params = useParams();
@@ -70,22 +73,37 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [addForm, setAddForm] = useState({
-    type: "number",
+    type: "number" as "number" | "bar" | "line" | "pie" | "doughnut" | "radar" | "polarArea" | "area",
     title: "",
-    dataEndpoint: dataEndpoints[0].value,
-    color: chartColors[0].value,
+    dataEndpoint: DATA_ENDPOINTS[0].value,
+    color: CHART_COLORS[0].value,
+  } as {
+    type: "number" | "bar" | "line" | "pie" | "doughnut" | "radar" | "polarArea" | "area";
+    title: string;
+    dataEndpoint: string;
+    color: string;
   });
   const [addLoading, setAddLoading] = useState(false);
   const [previewData, setPreviewData] = useState<any>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
-  const [typeOptions, setTypeOptions] = useState(["number", "bar", "line", "pie", "doughnut", "radar", "polarArea", "area"]);
+  const [typeOptions] = useState(TYPE_OPTIONS);
   const [reordering, setReordering] = useState(false);
   const [editChart, setEditChart] = useState<Chart | null>(null);
-  const [editForm, setEditForm] = useState({ type: "number", title: "", dataEndpoint: dataEndpoints[0].value, color: chartColors[0].value });
+  const [editForm, setEditForm] = useState({ 
+    type: "number" as "number" | "bar" | "line" | "pie" | "doughnut" | "radar" | "polarArea" | "area", 
+    title: "", 
+    dataEndpoint: DATA_ENDPOINTS[0].value, 
+    color: CHART_COLORS[0].value 
+  } as {
+    type: "number" | "bar" | "line" | "pie" | "doughnut" | "radar" | "polarArea" | "area";
+    title: string;
+    dataEndpoint: string;
+    color: string;
+  });
   const [editLoading, setEditLoading] = useState(false);
   const [editPreviewData, setEditPreviewData] = useState<any>(null);
   const [editPreviewLoading, setEditPreviewLoading] = useState(false);
-  const [editTypeOptions, setEditTypeOptions] = useState(["number", "bar", "line", "pie", "doughnut", "radar", "polarArea", "area"]);
+  const [editTypeOptions] = useState(TYPE_OPTIONS);
   const [deleteChartId, setDeleteChartId] = useState<string | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [fullscreenChart, setFullscreenChart] = useState<Chart | null>(null);
@@ -327,7 +345,7 @@ export default function DashboardPage() {
   useEffect(() => {
     // Reset preview and type options when endpoint changes
     setPreviewData(null);
-    setTypeOptions(["number", "bar", "line", "pie", "doughnut", "scatter", "radar", "polarArea"]);
+    
     if (!addForm.dataEndpoint) return;
     setPreviewLoading(true);
     fetch(addForm.dataEndpoint)
@@ -336,18 +354,17 @@ export default function DashboardPage() {
         setPreviewData(data);
         // Chart type filtering logic
         if (typeof data.value === "number") {
-          setTypeOptions(["number"]);
+  
           setAddForm(f => ({ ...f, type: "number" }));
         } else if (Array.isArray(data.labels) && Array.isArray(data.values)) {
-          setTypeOptions(["bar", "line", "pie", "doughnut", "radar", "polarArea", "area"]);
           setAddForm(f => ({ ...f, type: "bar" }));
         } else {
-          setTypeOptions(["number", "bar", "line", "pie", "doughnut", "radar", "polarArea", "area"]);
+          // Default to bar type for other data formats
+          setAddForm(f => ({ ...f, type: "bar" }));
         }
       })
       .catch(() => {
         setPreviewData(null);
-        setTypeOptions(["number", "bar", "line", "pie", "doughnut", "radar", "polarArea", "area"]);
       })
       .finally(() => setPreviewLoading(false));
     // eslint-disable-next-line
@@ -358,18 +375,15 @@ export default function DashboardPage() {
     if (!editChart) return;
     
     // Pre-fill the edit form with existing chart data
-    setEditForm({
-      type: editChart.type,
-      title: editChart.title,
-      dataEndpoint: editChart.dataEndpoint,
-      color: editChart.color || chartColors[0].value,
-    });
-    
-    // Reset preview and type options
+          setEditForm({
+        type: editChart.type as "number" | "bar" | "line" | "pie" | "doughnut" | "radar" | "polarArea" | "area",
+        title: editChart.title,
+        dataEndpoint: editChart.dataEndpoint as string,
+        color: editChart.color || "#60a5fa",
+      });
+
+    // Reset preview data and set loading state for edit modal
     setEditPreviewData(null);
-    setEditTypeOptions(["number", "bar", "line", "pie", "doughnut", "scatter", "radar", "polarArea"]);
-    
-    // Load preview data for the current endpoint
     setEditPreviewLoading(true);
     fetch(editChart.dataEndpoint)
       .then(res => res.json())
@@ -377,18 +391,15 @@ export default function DashboardPage() {
         setEditPreviewData(data);
         // Chart type filtering logic
         if (typeof data.value === "number") {
-          setEditTypeOptions(["number"]);
           setEditForm(f => ({ ...f, type: "number" }));
         } else if (Array.isArray(data.labels) && Array.isArray(data.values)) {
-          setEditTypeOptions(["bar", "line", "pie", "doughnut", "radar", "polarArea", "area"]);
           setEditForm(f => ({ ...f, type: "bar" }));
         } else {
-          setEditTypeOptions(["number", "bar", "line", "pie", "doughnut", "radar", "polarArea", "area"]);
+          setEditForm(f => ({ ...f, type: "bar" }));
         }
       })
       .catch(() => {
         setEditPreviewData(null);
-        setEditTypeOptions(["number", "bar", "line", "pie", "doughnut", "radar", "polarArea", "area"]);
       })
       .finally(() => setEditPreviewLoading(false));
     // eslint-disable-next-line
@@ -420,7 +431,12 @@ export default function DashboardPage() {
         const newChart = await response.json();
         setCharts(prev => [...prev, newChart]);
         setAddModalOpen(false);
-        setAddForm({ type: "number", title: "", dataEndpoint: dataEndpoints[0].value, color: chartColors[0].value });
+        setAddForm({ 
+          type: "number", 
+          title: "", 
+          dataEndpoint: DATA_ENDPOINTS[0].value, 
+          color: CHART_COLORS[0].value 
+        });
         setPreviewData(null);
       }
     } catch (error) {
@@ -513,7 +529,12 @@ export default function DashboardPage() {
         const updatedChart = await response.json();
         setCharts(prev => prev.map(chart => chart.id === editChart.id ? updatedChart : chart));
         setEditChart(null);
-        setEditForm({ type: "number", title: "", dataEndpoint: dataEndpoints[0].value, color: chartColors[0].value });
+        setEditForm({ 
+          type: "number", 
+          title: "", 
+          dataEndpoint: DATA_ENDPOINTS[0].value, 
+          color: CHART_COLORS[0].value 
+        });
         setEditPreviewData(null);
       }
     } catch (error) {
@@ -825,9 +846,9 @@ export default function DashboardPage() {
                             <select
                               className="border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                               value={addForm.dataEndpoint}
-                              onChange={e => setAddForm(f => ({ ...f, dataEndpoint: e.target.value }))}
+                              onChange={e => setAddForm(f => ({ ...f, dataEndpoint: e.target.value as string }))}
                             >
-                              {dataEndpoints.map(opt => (
+                              {DATA_ENDPOINTS.map((opt) => (
                                 <option key={opt.value} value={opt.value}>{opt.label}</option>
                               ))}
                             </select>
@@ -837,9 +858,9 @@ export default function DashboardPage() {
                             <select
                               className="border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                               value={addForm.color}
-                              onChange={e => setAddForm(f => ({ ...f, color: e.target.value }))}
+                              onChange={e => setAddForm(f => ({ ...f, color: e.target.value as string }))}
                             >
-                              {chartColors.map(opt => (
+                              {CHART_COLORS.map((opt) => (
                                 <option key={opt.value} value={opt.value}>{opt.label}</option>
                               ))}
                             </select>
@@ -849,9 +870,9 @@ export default function DashboardPage() {
                             <select
                               className="border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                               value={addForm.type}
-                              onChange={e => setAddForm(f => ({ ...f, type: e.target.value }))}
+                                                             onChange={e => setAddForm(f => ({ ...f, type: e.target.value as "number" | "bar" | "line" | "pie" | "doughnut" | "radar" | "polarArea" | "area" }))}
                             >
-                              {chartOptions.filter(opt => typeOptions.includes(opt.value)).map(opt => (
+                                                             {CHART_OPTIONS.filter((opt) => typeOptions.includes(opt.value)).map((opt) => (
                                 <option key={opt.value} value={opt.value}>{opt.label}</option>
                               ))}
                             </select>
@@ -878,7 +899,7 @@ export default function DashboardPage() {
                             className="btn btn-outline ml-auto"
                             onClick={() => {
                               setAddModalOpen(false);
-                              setAddForm({ type: "number", title: "", dataEndpoint: dataEndpoints[0].value, color: chartColors[0].value });
+                              setAddForm({ type: "number", title: "", dataEndpoint: DATA_ENDPOINTS[0].value, color: CHART_COLORS[0].value });
                               setPreviewData(null);
                             }}
                           >
@@ -990,9 +1011,14 @@ export default function DashboardPage() {
                             <select
                               className="border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                               value={editForm.dataEndpoint}
-                              onChange={e => setEditForm(f => ({ ...f, dataEndpoint: e.target.value }))}
+                                                             onChange={e =>
+                                 setEditForm(f => ({
+                                   ...f,
+                                   dataEndpoint: e.target.value as string
+                                 }))
+                               }
                             >
-                              {dataEndpoints.map(opt => (
+                              {Array.from(DATA_ENDPOINTS).map(opt => (
                                 <option key={opt.value} value={opt.value}>{opt.label}</option>
                               ))}
                             </select>
@@ -1002,9 +1028,14 @@ export default function DashboardPage() {
                             <select
                               className="border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                               value={editForm.color}
-                              onChange={e => setEditForm(f => ({ ...f, color: e.target.value }))}
+                                                             onChange={e =>
+                                 setEditForm(f => ({
+                                   ...f,
+                                   color: e.target.value as string
+                                 }))
+                               }
                             >
-                              {chartColors.map(opt => (
+                              {Array.from(CHART_COLORS).map(opt => (
                                 <option key={opt.value} value={opt.value}>{opt.label}</option>
                               ))}
                             </select>
@@ -1014,11 +1045,20 @@ export default function DashboardPage() {
                             <select
                               className="border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                               value={editForm.type}
-                              onChange={e => setEditForm(f => ({ ...f, type: e.target.value }))}
+                                                             onChange={e =>
+                                 setEditForm(f => ({
+                                   ...f,
+                                   type: e.target.value as "number" | "bar" | "line" | "pie" | "doughnut" | "radar" | "polarArea" | "area"
+                                 }))
+                               }
                             >
-                              {chartOptions.filter(opt => editTypeOptions.includes(opt.value)).map(opt => (
-                                <option key={opt.value} value={opt.value}>{opt.label}</option>
-                              ))}
+                              {Array.from(CHART_OPTIONS)
+                                .filter(opt => editTypeOptions.includes(opt.value))
+                                .map(opt => (
+                                  <option key={opt.value} value={opt.value}>
+                                    {opt.label}
+                                  </option>
+                                ))}
                             </select>
                           </div>
                         </div>
@@ -1043,7 +1083,7 @@ export default function DashboardPage() {
                             className="btn btn-outline ml-auto"
                             onClick={() => {
                               setEditChart(null);
-                              setEditForm({ type: "number", title: "", dataEndpoint: dataEndpoints[0].value, color: chartColors[0].value });
+                              setEditForm({ type: "number", title: "", dataEndpoint: DATA_ENDPOINTS[0].value, color: CHART_COLORS[0].value });
                               setEditPreviewData(null);
                             }}
                           >

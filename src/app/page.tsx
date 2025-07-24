@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import DarkModeToggle from '../components/DarkModeToggle';
@@ -38,9 +38,23 @@ export default function HomePage() {
     fetchDashboards();
   }, []);
 
-  const handleCreateDashboard = () => {
+  const handleCreateDashboard = useCallback(() => {
     router.push('/dashboard/create');
-  };
+  }, [router]);
+
+  const handleSidebarToggle = useCallback(() => {
+    setSidebarOpen(!sidebarOpen);
+  }, [sidebarOpen]);
+
+  const handleSidebarClose = useCallback(() => {
+    setSidebarOpen(false);
+  }, []);
+
+  const sortedDashboards = useMemo(() => {
+    return dashboards
+      .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
+      .slice(0, 3);
+  }, [dashboards]);
 
   if (loading) {
     return (
@@ -61,7 +75,7 @@ export default function HomePage() {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
               <button
-                onClick={() => setSidebarOpen(!sidebarOpen)}
+                onClick={handleSidebarToggle}
                 className="p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-mint dark:focus:ring-pink"
               >
                 <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -90,7 +104,7 @@ export default function HomePage() {
         {/* Sidebar */}
         <Sidebar 
           isOpen={sidebarOpen} 
-          onClose={() => setSidebarOpen(false)} 
+          onClose={handleSidebarClose} 
         />
 
         {/* Main Content */}
@@ -174,10 +188,7 @@ export default function HomePage() {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {dashboards
-                    .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
-                    .slice(0, 3)
-                    .map((dashboard) => (
+                  {sortedDashboards.map((dashboard) => (
                     <Link
                       key={dashboard.id}
                       href={`/dashboard/${dashboard.id}`}

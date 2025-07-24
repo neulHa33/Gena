@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 
 interface Dashboard {
@@ -37,17 +37,17 @@ export default function Sidebar({ isOpen, onClose, currentDashboardId }: Sidebar
     fetchDashboards();
   }, []);
 
-  const handleDashboardClick = (dashboardId: string) => {
+  const handleDashboardClick = useCallback((dashboardId: string) => {
     router.push(`/dashboard/${dashboardId}`);
     onClose();
-  };
+  }, [router, onClose]);
 
-  const handleRenameStart = (dashboard: Dashboard) => {
+  const handleRenameStart = useCallback((dashboard: Dashboard) => {
     setEditingDashboard(dashboard.id);
     setEditName(dashboard.name);
-  };
+  }, []);
 
-  const handleRenameSave = async (dashboardId: string) => {
+  const handleRenameSave = useCallback(async (dashboardId: string) => {
     try {
       const response = await fetch(`/api/dashboards/${dashboardId}`, {
         method: 'PUT',
@@ -65,14 +65,14 @@ export default function Sidebar({ isOpen, onClose, currentDashboardId }: Sidebar
     } catch (error) {
       console.error('Failed to rename dashboard:', error);
     }
-  };
+  }, [editName]);
 
-  const handleRenameCancel = () => {
+  const handleRenameCancel = useCallback(() => {
     setEditingDashboard(null);
     setEditName('');
-  };
+  }, []);
 
-  const handleDeleteDashboard = async (dashboardId: string) => {
+  const handleDeleteDashboard = useCallback(async (dashboardId: string) => {
     setDeleteLoading(dashboardId);
     try {
       const response = await fetch(`/api/dashboards/${dashboardId}`, {
@@ -91,7 +91,7 @@ export default function Sidebar({ isOpen, onClose, currentDashboardId }: Sidebar
     } finally {
       setDeleteLoading(null);
     }
-  };
+  }, [currentDashboardId, router]);
 
   return (
     <>

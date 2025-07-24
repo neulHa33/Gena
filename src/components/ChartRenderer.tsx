@@ -319,7 +319,13 @@ const ChartRenderer = React.memo(({ type, title, data, color = '#72E9BF', fullsc
     >
       {type === 'number' && (
         <div className="flex items-center justify-center h-full">
-          <div className="text-center">
+          <div 
+            className="text-center rounded-lg p-6"
+            style={{ 
+              backgroundColor: color + '33',
+              minWidth: '200px'
+            }}
+          >
             <div className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
               {chartData.datasets?.[0]?.data?.[0] || '0'}
             </div>

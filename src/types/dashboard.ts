@@ -15,6 +15,7 @@ export interface Dashboard {
   charts: Chart[];
   createdAt?: string;
   updatedAt?: string;
+  description?: string;
 }
 
 // Grid layout types for react-grid-layout

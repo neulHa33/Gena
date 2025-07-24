@@ -32,6 +32,7 @@ interface Dashboard {
   charts: Chart[];
   createdAt?: string;
   updatedAt?: string;
+  description?: string;
 }
 
 const chartOptions = [
@@ -421,7 +422,7 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-white dark:bg-black">
       {/* Navigation Bar */}
       <nav className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
               <button
@@ -473,15 +474,25 @@ export default function DashboardPage() {
 
         {/* Main Content */}
         <div className="flex-1">
-          <div className="max-w-7xl mx-auto px-6 py-8">
+          <div className="px-6 py-8">
             <div ref={dashboardRef} id="dashboard-export" className="pb-8">
               {loading ? (
                 <div>Loading...</div>
               ) : dashboard ? (
                 <>
-                  <h1 className="text-2xl font-bold mb-4 tracking-tight">{dashboard.name}</h1>
+                  <div className="p-4">
+                      <h1 className="text-5xl font-bold mb-2 tracking-tight">{dashboard.name}</h1>
+                      {dashboard.description && (
+                        <div className="text-lg text-gray-600 dark:text-gray-300 mb-1">{dashboard.description}</div>
+                      )}
+                      {dashboard.createdAt && (
+                        <div className="text-sm text-gray-400 dark:text-gray-500">
+                          Created on {new Date(dashboard.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}
+                        </div>
+                      )}
+                  </div>
                   {/* Add Chart Button */}
-                  <div className="mb-8 flex justify-end">
+                  <div className="p-4 flex justify-end">
                     <button
                       className="btn btn-primary px-6 py-2 rounded-xl shadow hover:shadow-lg flex items-center gap-2"
                       onClick={() => setAddModalOpen(true)}

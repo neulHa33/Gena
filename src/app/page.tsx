@@ -57,7 +57,7 @@ export default function HomePage() {
     <div className="min-h-screen bg-white dark:bg-black">
       {/* Navigation Bar */}
       <nav className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
               <button
@@ -73,12 +73,6 @@ export default function HomePage() {
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <button
-                onClick={handleCreateDashboard}
-                className="bg-mint dark:bg-pink text-white px-4 py-2 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
-              >
-                Create Dashboard
-              </button>
               <div className="ml-4">
                 <DarkModeToggle />
               </div>
@@ -96,7 +90,7 @@ export default function HomePage() {
 
         {/* Main Content */}
         <div className="flex-1">
-          <div className="max-w-6xl mx-auto px-4 py-8">
+          <div className="px-4 py-8">
             {/* Header */}
             <div className="text-center mb-12">
               <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
@@ -113,8 +107,44 @@ export default function HomePage() {
               </button>
             </div>
 
+            {/* Features Section */}
+            <div className="mt-16 max-w-5xl mx-auto">
+              <h2 className="text-2xl font-semibold text-gray-900 dark:text-white text-center mb-8">
+                Features
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div className="text-center">
+                  <div className="w-12 h-12 flex items-center justify-center mx-auto mb-4">
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Drag & Drop</h3>
+                  <p className="text-gray-600 dark:text-gray-400">Rearrange and resize charts with ease</p>
+                </div>
+                <div className="text-center">
+                  <div className="w-12 h-12 rounded-lg flex items-center justify-center mx-auto mb-4">
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Multiple Chart Types</h3>
+                  <p className="text-gray-600 dark:text-gray-400">Bar, line, pie, and more chart types</p>
+                </div>
+                <div className="text-center">
+                  <div className="w-12 h-12 rounded-lg flex items-center justify-center mx-auto mb-4">
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Light & Dark Mode</h3>
+                  <p className="text-gray-600 dark:text-gray-400">Beautiful themes for any preference</p>
+                </div>
+              </div>
+            </div>
+
             {/* Dashboard List */}
-            <div className="max-w-4xl mx-auto">
+            <div className="mt-16 max-w-7xl mx-auto">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">
                   Your Dashboards
@@ -176,41 +206,7 @@ export default function HomePage() {
               )}
             </div>
 
-            {/* Features Section */}
-            <div className="mt-16 max-w-4xl mx-auto">
-              <h2 className="text-2xl font-semibold text-gray-900 dark:text-white text-center mb-8">
-                Features
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <div className="text-center">
-                  <div className="w-12 h-12 bg-mint dark:bg-pink rounded-lg flex items-center justify-center mx-auto mb-4">
-                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                    </svg>
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Drag & Drop</h3>
-                  <p className="text-gray-600 dark:text-gray-400">Rearrange and resize charts with ease</p>
-                </div>
-                <div className="text-center">
-                  <div className="w-12 h-12 bg-mint dark:bg-pink rounded-lg flex items-center justify-center mx-auto mb-4">
-                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
-                    </svg>
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Multiple Chart Types</h3>
-                  <p className="text-gray-600 dark:text-gray-400">Bar, line, pie, and more chart types</p>
-                </div>
-                <div className="text-center">
-                  <div className="w-12 h-12 bg-mint dark:bg-pink rounded-lg flex items-center justify-center mx-auto mb-4">
-                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                    </svg>
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Light & Dark Mode</h3>
-                  <p className="text-gray-600 dark:text-gray-400">Beautiful themes for any preference</p>
-                </div>
-              </div>
-            </div>
+            
           </div>
         </div>
       </div>

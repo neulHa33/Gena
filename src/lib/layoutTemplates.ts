@@ -5,7 +5,7 @@ export const layoutTemplates: LayoutTemplate[] = [
   {
     id: 'single-column',
     name: 'Single Column',
-    description: 'Perfect for focused dashboards with one main metric per row',
+    description: 'Stack multiple charts vertically, one per row.',
     preview: '/templates/single-column.png',
     layout: [
       { i: 'chart-1', x: 0, y: 0, w: 12, h: 4, minW: 6, minH: 2 },
@@ -19,7 +19,7 @@ export const layoutTemplates: LayoutTemplate[] = [
   {
     id: 'two-column',
     name: 'Two Column',
-    description: 'Balanced layout with two charts side by side',
+    description: 'Compare two charts side by side in equal width.',
     preview: '/templates/two-column.png',
     layout: [
       { i: 'chart-1', x: 0, y: 0, w: 6, h: 4, minW: 4, minH: 2 },
@@ -33,7 +33,7 @@ export const layoutTemplates: LayoutTemplate[] = [
   {
     id: 'three-column',
     name: 'Three Column',
-    description: 'Compact layout with three charts per row',
+    description: 'Three charts per row, great for quick comparisons.',
     preview: '/templates/three-column.png',
     layout: [
       { i: 'chart-1', x: 0, y: 0, w: 4, h: 4, minW: 3, minH: 2 },
@@ -48,7 +48,7 @@ export const layoutTemplates: LayoutTemplate[] = [
   {
     id: 'hero-layout',
     name: 'Hero Layout',
-    description: 'Prominent main chart with supporting metrics below',
+    description: 'Large main chart on top, with three smaller charts below.',
     preview: '/templates/hero-layout.png',
     layout: [
       { i: 'chart-1', x: 0, y: 0, w: 12, h: 6, minW: 8, minH: 4 },
@@ -62,7 +62,7 @@ export const layoutTemplates: LayoutTemplate[] = [
   {
     id: 'grid-layout',
     name: 'Grid Layout',
-    description: 'Flexible grid with equal-sized chart blocks',
+    description: '2x3 grid of equal-sized charts for a balanced overview.',
     preview: '/templates/grid-layout.png',
     layout: [
       { i: 'chart-1', x: 0, y: 0, w: 6, h: 4, minW: 4, minH: 2 },

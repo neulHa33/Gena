@@ -116,11 +116,11 @@ const ChartRenderer = React.memo(({ type, title, data, color = '#72E9BF', fullsc
     let polarAreaDatalabels = {};
     if (type === 'polarArea' && chartData && chartData.datasets && chartData.datasets[0]?.data) {
       const values = chartData.datasets[0].data;
-      // Get indices of top 2 values
+      // Get indices of top 4 values
       const sorted = values
         .map((v: number, i: number) => ({ v, i }))
         .sort((a: { v: number; i: number }, b: { v: number; i: number }) => b.v - a.v);
-      const showIndices = sorted.slice(0, 2).map((obj: { v: number; i: number }) => obj.i);
+      const showIndices = sorted.slice(0, 4).map((obj: { v: number; i: number }) => obj.i);
       polarAreaDatalabels = {
         display: (ctx: any) => showIndices.includes(ctx.dataIndex),
         color: '#fff',
@@ -214,6 +214,23 @@ const ChartRenderer = React.memo(({ type, title, data, color = '#72E9BF', fullsc
         point: {
           radius: type === 'radar' ? (fullscreen ? 4 : 3) : (fullscreen ? 8 : 6),
           hoverRadius: type === 'radar' ? (fullscreen ? 6 : 5) : (fullscreen ? 10 : 8),
+        },
+        bar: {
+          hoverBackgroundColor: (context: any) => {
+            const color = context.raw.backgroundColor || context.raw.borderColor;
+            if (color) {
+              // Make the color darker for hover effect
+              const hex = color.replace('#', '');
+              const r = parseInt(hex.substr(0, 2), 16);
+              const g = parseInt(hex.substr(2, 2), 16);
+              const b = parseInt(hex.substr(4, 2), 16);
+              const darkerR = Math.max(0, r - 40);
+              const darkerG = Math.max(0, g - 40);
+              const darkerB = Math.max(0, b - 40);
+              return `#${darkerR.toString(16).padStart(2, '0')}${darkerG.toString(16).padStart(2, '0')}${darkerB.toString(16).padStart(2, '0')}`;
+            }
+            return color;
+          },
         },
       },
     };

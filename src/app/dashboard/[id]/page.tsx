@@ -844,7 +844,7 @@ export default function DashboardPage() {
                           <div>
                             <label className="block text-xs mb-1">Endpoint</label>
                             <select
-                              className="border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                              className="border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 pr-8 w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                               value={addForm.dataEndpoint}
                               onChange={e => setAddForm(f => ({ ...f, dataEndpoint: e.target.value as string }))}
                             >
@@ -856,7 +856,7 @@ export default function DashboardPage() {
                           <div>
                             <label className="block text-xs mb-1">Color Palette</label>
                             <select
-                              className="border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                              className="border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 pr-8 w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                               value={addForm.color}
                               onChange={e => setAddForm(f => ({ ...f, color: e.target.value as string }))}
                             >
@@ -868,7 +868,7 @@ export default function DashboardPage() {
                           <div>
                             <label className="block text-xs mb-1">Chart Type</label>
                             <select
-                              className="border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                              className="border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 pr-8 w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                               value={addForm.type}
                                                              onChange={e => setAddForm(f => ({ ...f, type: e.target.value as "number" | "bar" | "line" | "pie" | "doughnut" | "radar" | "polarArea" | "area" }))}
                             >
@@ -1009,7 +1009,7 @@ export default function DashboardPage() {
                           <div>
                             <label className="block text-xs mb-1">Endpoint</label>
                             <select
-                              className="border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                              className="border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 pr-8 w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                               value={editForm.dataEndpoint}
                                                              onChange={e =>
                                  setEditForm(f => ({
@@ -1026,7 +1026,7 @@ export default function DashboardPage() {
                           <div>
                             <label className="block text-xs mb-1">Color Palette</label>
                             <select
-                              className="border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                              className="border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 pr-8 w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                               value={editForm.color}
                                                              onChange={e =>
                                  setEditForm(f => ({
@@ -1043,7 +1043,7 @@ export default function DashboardPage() {
                           <div>
                             <label className="block text-xs mb-1">Chart Type</label>
                             <select
-                              className="border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                              className="border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 pr-8 w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                               value={editForm.type}
                                                              onChange={e =>
                                  setEditForm(f => ({

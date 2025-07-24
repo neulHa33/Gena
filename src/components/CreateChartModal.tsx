@@ -171,7 +171,7 @@ const CreateChartModal: React.FC<CreateChartModalProps> = ({ isOpen, onClose, on
                 <select
                   value={dataEndpoint}
                   onChange={(e) => setDataEndpoint(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  className="w-full px-4 py-3 pr-8 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                 >
                   {dataEndpoints.map((endpoint) => (
                     <option key={endpoint.value} value={endpoint.value}>

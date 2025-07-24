@@ -184,7 +184,7 @@ export default function DashboardPage() {
   // Calculate scale factor for grid zoom-out effect
   useEffect(() => {
     function handleResize() {
-      const baseWidth = 1720; // match the GridLayout width
+      const baseWidth = 1500; // match the GridLayout width
       if (gridContainerRef.current) {
         const containerWidth = gridContainerRef.current.offsetWidth;
         const newScale = Math.min(1, containerWidth / baseWidth);
@@ -762,30 +762,31 @@ export default function DashboardPage() {
 
                   {/* Dashboard Grid */}
                   <div ref={gridContainerRef} style={{ width: '100%', overflow: 'auto' }}>
-                    <div style={{ width: '1720px', transform: `scale(${scale})`, transformOrigin: 'top left' }}>
+                    <div style={{ width: '1500px', transform: `scale(${scale})`, transformOrigin: 'top left' }}>
                       <GridLayout
                         className="layout"
                         layout={layouts.lg || []}
                         cols={4}
-                        rowHeight={430}
-                        width={1720}
+                        rowHeight={300}
+                        width={1500}
                         onLayoutChange={onLayoutChange}
                         isDraggable={true}
                         isResizable={true}
                         margin={[10, 10]}
                         containerPadding={[10, 10]}
-                        style={{ minHeight: '1300px' }}
+                        style={{ minHeight: '900px' }}
                         compactType={null}
                         preventCollision={true}
                       >
                                                   {orderedCharts.map(chart => (
                             <div key={chart.id} className="dashboard-container bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4" style={{ height: '100%', width: '100%'}}>
-                            <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center justify-between mb-4 relative z-10">
                               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{chart.title}</h3>
                               <div className="flex items-center space-x-2">
                                 <button
                                   onClick={() => setEditChart(chart)}
-                                  className="text-gray-400 hover:text-mint dark:hover:text-pink p-1"
+                                  className="text-gray-400 hover:text-mint dark:hover:text-pink p-1 relative z-20"
+                                  style={{ pointerEvents: 'auto' }}
                                 >
                                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -793,7 +794,8 @@ export default function DashboardPage() {
                                 </button>
                                 <button
                                   onClick={() => setDeleteChartId(chart.id)}
-                                  className="text-gray-400 hover:text-red-500 p-1"
+                                  className="text-gray-400 hover:text-red-500 p-1 relative z-20"
+                                  style={{ pointerEvents: 'auto' }}
                                 >
                                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -968,7 +970,7 @@ function ChartContainer({ chart, setFullscreenChart }: { chart: Chart, setFullsc
   
   if (!data) return <div className="bg-white dark:bg-gray-800 shadow rounded p-6 h-full flex items-center justify-center">Loading chart...</div>;
   return (
-    <div onClick={handleClick} className="cursor-pointer group h-full flex flex-col" style={{ pointerEvents: 'auto' }}>
+    <div onClick={handleClick} className="cursor-pointer group h-full flex flex-col relative z-10" style={{ pointerEvents: 'auto' }}>
       <div className="flex-1 min-h-0">
         <ChartRenderer type={chart.type} title={chart.title} data={data} color={chart.color} />
       </div>

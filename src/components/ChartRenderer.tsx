@@ -112,6 +112,29 @@ const ChartRenderer = React.memo(({ type, title, data, color = '#72E9BF', fullsc
   }, [data, color, type]);
 
   const chartOptions = useMemo(() => {
+    // Custom datalabels config for polarArea
+    let polarAreaDatalabels = {};
+    if (type === 'polarArea' && chartData && chartData.datasets && chartData.datasets[0]?.data) {
+      const values = chartData.datasets[0].data;
+      // Get indices of top 2 values
+      const sorted = values
+        .map((v: number, i: number) => ({ v, i }))
+        .sort((a: { v: number; i: number }, b: { v: number; i: number }) => b.v - a.v);
+      const showIndices = sorted.slice(0, 2).map((obj: { v: number; i: number }) => obj.i);
+      polarAreaDatalabels = {
+        display: (ctx: any) => showIndices.includes(ctx.dataIndex),
+        color: '#fff',
+        font: {
+          weight: 'bold' as const,
+          size: 10
+        },
+        formatter: (value: any, context: any) => {
+          const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
+          const percentage = ((value / total) * 100).toFixed(1);
+          return `${percentage}%`;
+        }
+      };
+    }
     const baseOptions = {
       responsive: true,
       maintainAspectRatio: false,
@@ -122,22 +145,25 @@ const ChartRenderer = React.memo(({ type, title, data, color = '#72E9BF', fullsc
         tooltip: {
           enabled: true,
         },
-        datalabels: {
-          display: type === 'pie' || type === 'doughnut',
-          color: '#fff',
-          font: {
-            weight: 'bold' as const,
-            size: 12
-          },
-          formatter: (value: any, context: any) => {
-            if (type === 'pie' || type === 'doughnut') {
-              const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
-              const percentage = ((value / total) * 100).toFixed(1);
-              return `${percentage}%`;
-            }
-            return value;
-          }
-        }
+        datalabels:
+          type === 'polarArea'
+            ? polarAreaDatalabels
+            : {
+                display: type === 'pie' || type === 'doughnut',
+                color: '#fff',
+                font: {
+                  weight: 'bold' as const,
+                  size: fullscreen ? 14 : 12
+                },
+                formatter: (value: any, context: any) => {
+                  if (type === 'pie' || type === 'doughnut') {
+                    const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
+                    const percentage = ((value / total) * 100).toFixed(1);
+                    return `${percentage}%`;
+                  }
+                  return value;
+                }
+              }
       },
       scales: {
         x: {
@@ -145,24 +171,55 @@ const ChartRenderer = React.memo(({ type, title, data, color = '#72E9BF', fullsc
           grid: {
             display: false,
           },
+          ticks: {
+            font: {
+              size: (type === 'bar' || type === 'line' || type === 'area') ? 13 : (fullscreen ? 12 : 10),
+              weight: (type === 'bar' || type === 'line' || type === 'area') ? 'bold' : 'normal'
+            }
+          }
         },
         y: {
           display: type !== 'pie' && type !== 'doughnut' && type !== 'polarArea',
           grid: {
             display: false,
           },
+          ticks: {
+            font: {
+              size: fullscreen ? 12 : 10
+            }
+          }
         },
+        r: {
+          display: type === 'radar',
+          grid: {
+            color: '#555',
+            borderColor: '#555',
+          },
+          ticks: {
+            color: '#ccc',
+            font: {
+              size: fullscreen ? 12 : 10
+            },
+            backdropColor: 'transparent'
+          },
+          pointLabels: {
+            color: '#ccc',
+            font: {
+              size: fullscreen ? 12 : 10
+            }
+          }
+        }
       },
       elements: {
         point: {
-          radius: type === 'radar' ? 3 : 6,
-          hoverRadius: type === 'radar' ? 5 : 8,
+          radius: type === 'radar' ? (fullscreen ? 4 : 3) : (fullscreen ? 8 : 6),
+          hoverRadius: type === 'radar' ? (fullscreen ? 6 : 5) : (fullscreen ? 10 : 8),
         },
       },
     };
 
     return baseOptions;
-  }, [type]);
+  }, [type, fullscreen, chartData]);
 
   if (!chartData) {
     return (
@@ -195,6 +252,38 @@ const ChartRenderer = React.memo(({ type, title, data, color = '#72E9BF', fullsc
       }));
     }
 
+    // Add fill styling for Area charts
+    if (type === 'area' && baseData.datasets) {
+      baseData.datasets = baseData.datasets.map((dataset: any) => ({
+        ...dataset,
+        fill: true,
+        backgroundColor: Array.isArray(dataset.backgroundColor) 
+          ? dataset.backgroundColor.map((color: string) => color + '40') // Add transparency for fill
+          : dataset.backgroundColor + '40',
+        borderColor: dataset.backgroundColor,
+        borderWidth: 2,
+        tension: 0.4
+      }));
+    }
+
+    // Add custom styling for Radar charts
+    if (type === 'radar' && baseData.datasets) {
+      baseData.datasets = baseData.datasets.map((dataset: any) => ({
+        ...dataset,
+        backgroundColor: Array.isArray(dataset.backgroundColor) 
+          ? dataset.backgroundColor.map((color: string) => color + '80') // Add 50% transparency
+          : dataset.backgroundColor + '80',
+        borderColor: dataset.backgroundColor,
+        borderWidth: 0.5,
+        pointRadius: 1,
+        pointHoverRadius: 3,
+        pointBackgroundColor: dataset.backgroundColor,
+        pointBorderColor: dataset.backgroundColor,
+        pointBorderWidth: 1,
+        tension: 0.1
+      }));
+    }
+
     // Limit labels for circular charts to prevent overlap
     if ((type === 'pie' || type === 'doughnut' || type === 'polarArea') && baseData.labels && baseData.labels.length > 3) {
       const sortedData = baseData.labels.map((label: string, index: number) => ({
@@ -219,7 +308,15 @@ const ChartRenderer = React.memo(({ type, title, data, color = '#72E9BF', fullsc
   }, [chartData, type]);
 
   return (
-    <div className={`w-full h-full ${fullscreen ? 'h-screen' : 'h-64'}`} style={{ minHeight: '200px' }}>
+    <div 
+      className={`w-full ${fullscreen ? 'h-full' : 'h-64'}`} 
+      style={{ 
+        minHeight: '200px',
+        maxWidth: fullscreen ? '90vw' : '100%',
+        maxHeight: fullscreen ? '80vh' : fullscreen ? '100%' : '100%',
+        height: fullscreen ? '100%' : 'auto'
+      }}
+    >
       {type === 'number' && (
         <div className="flex items-center justify-center h-full">
           <div className="text-center">

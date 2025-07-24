@@ -603,7 +603,7 @@ export default function DashboardPage() {
                       w: chart.w || 6,
                       h: chart.h || 4,
                       minW: 3,
-                      minH: 3,
+                      minH: 2,
                     })) }}
                     breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
                     cols={{ lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 }}
@@ -792,9 +792,14 @@ function ChartContainer({ chart, setFullscreenChart }: { chart: Chart, setFullsc
       .then((res) => res.json())
       .then(setData);
   }, [chart.dataEndpoint]);
+  
+  const handleClick = () => {
+    setFullscreenChart(chart);
+  };
+  
   if (!data) return <div className="bg-white dark:bg-gray-800 shadow rounded p-6">Loading chart...</div>;
   return (
-    <div onClick={() => setFullscreenChart(chart)} className="cursor-pointer group">
+    <div onClick={handleClick} className="cursor-pointer group" style={{ pointerEvents: 'auto' }}>
       <ChartRenderer type={chart.type} title={chart.title} data={data} color={chart.color} />
       <div className="text-xs text-gray-400 text-center mt-2 group-hover:text-mint dark:group-hover:text-pink">Click to enlarge</div>
     </div>
@@ -810,8 +815,8 @@ function FullscreenChartModal({ chart, onClose }: { chart: Chart, onClose: () =>
   }, [chart.dataEndpoint]);
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl p-6 max-w-6xl w-full max-h-[98vh] relative flex flex-col">
-        <div className="flex items-center justify-between mb-4">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl p-6 max-w-6xl w-full max-h-[80vh] relative flex flex-col">
+        <div className="flex items-center justify-between mb-4 flex-shrink-0">
           <h3 className="text-xl font-semibold text-gray-900 dark:text-white">{chart.title}</h3>
           <button 
             onClick={onClose} 
@@ -820,9 +825,9 @@ function FullscreenChartModal({ chart, onClose }: { chart: Chart, onClose: () =>
             ×
           </button>
         </div>
-        <div className="flex-1 min-h-0 overflow-hidden">
+        <div className="flex-1 min-h-0 overflow-auto">
           {data ? (
-            <div className="w-full h-full" style={{ minHeight: '600px', maxHeight: 'calc(98vh - 160px)' }}>
+            <div className="w-full" style={{ height: 'calc(80vh - 120px)', minHeight: '250px' }}>
               <ChartRenderer type={chart.type} title={chart.title} data={data} color={chart.color} fullscreen />
             </div>
           ) : (

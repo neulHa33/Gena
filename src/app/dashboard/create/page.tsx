@@ -118,14 +118,23 @@ export default function CreateDashboardPage() {
           charts: [],
         }),
       });
+      
       if (!response.ok) {
-        throw new Error('Failed to create dashboard');
+        const errorText = await response.text();
+        throw new Error(`Failed to create dashboard: ${response.status} ${errorText}`);
       }
+      
       const newDashboard = await response.json();
+      
+      if (!newDashboard || !newDashboard.id) {
+        throw new Error('Invalid response from server');
+      }
+      
+      // Navigate to the new dashboard
       router.push(`/dashboard/${newDashboard.id}`);
     } catch (error) {
       console.error('Failed to create dashboard:', error);
-      alert('Failed to create dashboard. Please try again.');
+      alert(`Failed to create dashboard: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsCreating(false);
     }

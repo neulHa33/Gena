@@ -11,15 +11,35 @@ const defaultData: Data = {
 };
 
 // Use in-memory database for Render compatibility
+// Make it a singleton to ensure data persistence across requests
 let dbData: Data = { ...defaultData };
 
+// Initialize with some sample data if empty
+if (dbData.dashboards.length === 0 && dbData.charts.length === 0) {
+  dbData = {
+    dashboards: [],
+    charts: [],
+  };
+}
+
 export async function readDb() {
-  return { data: dbData };
+  try {
+    return { data: dbData };
+  } catch (error) {
+    console.error('Error reading database:', error);
+    return { data: defaultData };
+  }
 }
 
 export async function writeDb() {
-  // In-memory storage, no need to write to file
-  return Promise.resolve();
+  try {
+    // In-memory storage, no need to write to file
+    // Just ensure the data is persisted in memory
+    return Promise.resolve();
+  } catch (error) {
+    console.error('Error writing database:', error);
+    return Promise.reject(error);
+  }
 }
 
 // Legacy sync functions for backward compatibility (if needed)

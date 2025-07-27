@@ -244,3 +244,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Styled with [Tailwind CSS](https://tailwindcss.com/)
 - Charts powered by [Chart.js](https://www.chartjs.org/)
 - Icons from [Heroicons](https://heroicons.com/)
+#   U p d a t e d   f o r   R e n d e r   d e p l o y m e n t  
+ 

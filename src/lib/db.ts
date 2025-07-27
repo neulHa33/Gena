@@ -1,5 +1,3 @@
-import { Low } from 'lowdb';
-import { JSONFile } from 'lowdb/node';
 import { Dashboard, Chart } from '../types/dashboard';
 
 export type Data = {
@@ -12,26 +10,23 @@ const defaultData: Data = {
   charts: [],
 };
 
-// Use a file-based database for persistence
-const file = './db.json';
-const adapter = new JSONFile<Data>(file);
-const db = new Low<Data>(adapter, defaultData);
+// Use in-memory database for Render compatibility
+let dbData: Data = { ...defaultData };
 
 export async function readDb() {
-  await db.read();
-  db.data ||= defaultData;
-  return db;
+  return { data: dbData };
 }
 
 export async function writeDb() {
-  await db.write();
+  // In-memory storage, no need to write to file
+  return Promise.resolve();
 }
 
 // Legacy sync functions for backward compatibility (if needed)
 export function getDb() {
-  return db.data || defaultData;
+  return dbData;
 }
 
 export function setDb(newDb: Data) {
-  db.data = newDb;
+  dbData = newDb;
 } 
